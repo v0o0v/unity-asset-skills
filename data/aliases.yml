@@ -1,0 +1,87 @@
+﻿# aliases.yml — 한↔영 별칭 사전 (CRIT-SCH5)
+#
+# Search 1차 라우팅 prompt에 첨부되는 한↔영 alias hint의 진실원.
+# 한글 token이 사용자 raw 쿼리에서 추출되면 lookup → routing prompt에
+# `--- Aliases hint ---` 블록으로 첨부된다.
+#
+# 형식: aliases: { <korean_word>: [<english_alias_1>, <english_alias_2>, ...] }
+# - korean_word는 사용자 쿼리에서 발견될 수 있는 한글 token (단어 단위).
+# - english_alias 배열은 routing subagent에게 힌트로 전달되어 sub_intents[].category_hint
+#   또는 subtype_hint 결정에 영향을 준다.
+#
+# 우선순위:
+# 1. 골든 쿼리 (tests/golden-queries.yml) 한글 키워드 100% 커버.
+# 2. Wave 1 도메인 (medieval/survival/zombie/top-down) 확장.
+# 3. 글로벌 공통 alias 30개 이상.
+
+version: 1
+aliases:
+  # === 골든 쿼리 핵심 키워드 (sch1_recall q01~q10 + orc1_routing) ===
+  좀비: [zombie, undead, ghoul, enemy]
+  검: [sword, blade, weapon]
+  숲: [forest, woods, vegetation]
+  메뉴: [menu, ui, hud]
+  음악: [music, audio, bgm]
+  효과음: [sfx, sound-effect, audio]
+  캐릭터: [character, humanoid, actor]
+  환경: [environment, scenery, ambience]
+  석재: [stone, masonry, rock]
+  중세: [medieval, fantasy, historical]
+
+  # === 골든 쿼리 추가 키워드 (q01~q10, r01~r10) ===
+  외벽: [exterior-wall, wall, facade, modular-wall]
+  마을: [village, town, settlement]
+  적: [enemy, hostile, foe]
+  플레이어: [player, protagonist, hero]
+  생존자: [survivor, survival-character]
+  생존: [survival, survive]
+  탑다운: [topdown, top-down, isometric]
+  스폰: [spawn, spawner, instantiate]
+  설정: [config, configuration, settings, scriptable-object]
+  나무: [tree, pine, oak, vegetation]
+  식생: [vegetation, foliage, plant]
+  메인: [main, primary]
+  UI: [ui, hud, interface, canvas]
+  긴장감: [tension, suspense, dark]
+  게임: [game, gameplay]
+  배경: [background, ambient, backdrop]
+  이끼: [moss, mossy, lichen]
+  머티리얼: [material, surface, shader]
+  프리팹: [prefab, gameobject]
+  컨트롤러: [controller, manager]
+  애니메이션: [animation, animator, anim]
+  바위: [rock, boulder, stone]
+  일시정지: [pause, paused, suspend]
+  스크립트: [script, code, csharp]
+
+  # === Wave 1 도메인 확장 (medieval/survival/zombie/top-down 게임) ===
+  한국형: [topdown, korean-style, casual]
+  모듈형: [modular, modular-asset, tileable]
+  황폐: [ruined, desolate, abandoned]
+  분위기: [atmosphere, mood, vibe]
+  핵심: [core, essential, main]
+  프로토타입: [prototype, mvp, draft]
+
+  # === 추가 공통 alias (Unity 도메인 일반) ===
+  텍스처: [texture, albedo, normal-map]
+  스프라이트: [sprite, sprite-2d, 2d]
+  애니메이터: [animator, animation-controller]
+  쉐이더: [shader, material-shader]
+  사운드: [sound, audio, sfx]
+  카메라: [camera, viewpoint, view]
+  조명: [light, lighting, illumination]
+  파티클: [particle, vfx, fx]
+  스크립터블오브젝트: [scriptable-object, so, asset-data]
+  아이콘: [icon, ui-icon, sprite-icon]
+  HUD: [hud, ui, overlay]
+  BGM: [bgm, music, background-music]
+  SFX: [sfx, sound-effect, audio]
+  VFX: [vfx, particle, effect]
+  큐브맵: [cubemap, skybox]
+  스카이박스: [skybox, cubemap, sky]
+  지형: [terrain, ground, landscape]
+  건물: [building, structure, architecture]
+  무기: [weapon, sword, gun]
+  방어구: [armor, shield, defense]
+  포션: [potion, consumable, item]
+  인벤토리: [inventory, item-grid, slot]

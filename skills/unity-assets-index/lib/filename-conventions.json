@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "patterns": [
+    {"regex": "(^|_)FX(_|$|\\.)", "signals": ["vfx"]},
+    {"regex": "(^|_)Loop(_|$)", "signals": ["loop", "audio:music"]},
+    {"regex": "(^|_)SFX(_|$)", "signals": ["audio:sfx"]},
+    {"regex": "_normal(\\.|$)", "signals": ["texture:normal-map"]},
+    {"regex": "_mask(\\.|$)", "signals": ["texture:mask"]},
+    {"regex": "_albedo(\\.|$)", "signals": ["texture:albedo"]},
+    {"regex": "9-Slice", "signals": ["sprite:9-slice", "ui"]},
+    {"regex": "Tilesheet|Spritesheet", "signals": ["sprite:spritesheet"]}
+  ]
+}

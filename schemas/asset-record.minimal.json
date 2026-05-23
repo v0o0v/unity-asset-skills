@@ -44,6 +44,16 @@
     "llm_summary": {
       "type": "string",
       "description": "asset-tagger subagent가 생성한 한 줄 요약 (한글). 검색 매칭에 사용된다."
+    },
+    "filename_signals": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "(optional) indexer cheap parser가 filename regex (skills/unity-assets-index/lib/filename-conventions.json)로 추출한 신호. 예: [\"vfx\"], [\"loop\", \"audio:music\"], [\"texture:normal-map\"]. minimal 7 필드 약속에는 영향을 주지 않는 추가 신호 필드 (CRIT-IDX5)."
+    },
+    "type_subtype": {
+      "type": "string",
+      "pattern": "^[A-Za-z]+/[a-z0-9-]+$",
+      "description": "(optional) Unity 에셋 타입의 서브분류. data/type-taxonomy.yml의 후보 중 1개를 \"<Type>/<subtype>\" 형식으로 (예: \"Sprite/ui\", \"AudioClip/music\"). .meta + 파일 헤더 sniff + filename_signals를 종합하여 indexer가 결정. 결정 불가시 필드 자체 생략 (CRIT-IDX6)."
     }
   }
 }

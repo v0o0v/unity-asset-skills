@@ -1,0 +1,21 @@
+# unity-assets.labels.example.yml — 프로젝트 큐레이션 라벨 샘플 (Wave 1 plan Step 5 / CRIT-IDX7).
+#
+# 사용 방법: 본 파일을 Unity 프로젝트 루트의 .claude/unity-assets.labels.yml로 복사하고
+# 프로젝트의 디렉터리 구조에 맞춰 glob 패턴 + 라벨 배열을 수정한다.
+#
+# 우선순위: unity-assets.labels.yml > .meta labels > llm_tags
+# 충돌 시 yml 라벨이 보존되며, 매칭은 정의 순서 우선 (첫 매칭만 적용).
+# 스키마: schemas/curated-labels.json.schema.json
+
+version: 1
+labels:
+  "Assets/Characters/Zombies/**":
+    - enemy
+    - undead
+    - low-poly
+  "Assets/UI/Menus/**":
+    - ui
+    - hud
+  "Assets/Audio/Music/**":
+    - audio
+    - music

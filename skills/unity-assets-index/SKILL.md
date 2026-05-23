@@ -81,6 +81,46 @@ Task(
 )
 ```
 
+### Step 4.5 — minimal-tier record 보강 (Wave 1 신호 추출)
+
+asset-tagger subagent가 emit한 minimal row를 검증·append하기 전에 indexer cheap parser가 다음 3개의 신호를 추가로 채운다. subagent에 추가 호출 비용을 주지 않는 indexer-local 단계다.
+
+#### 4.5.1 — filename regex 신호 추출 (CRIT-IDX5)
+
+1. `skills/unity-assets-index/lib/filename-conventions.json` 로드 (인덱서 시작 시 1회 캐시).
+2. 각 asset의 `path`에서 파일명 부분 (디렉터리 제외)을 추출.
+3. `patterns[]` 배열을 순회하며 각 `regex`를 파일명에 매칭. 매칭 성공한 패턴의 `signals` 배열을 모두 union으로 수집.
+4. 신호가 1개 이상 수집되면 minimal row의 `filename_signals` (string[]) 필드에 정렬 없이 입력 순서로 기입. 0개면 필드 자체를 생략 (optional).
+5. 이 단계는 asset-tagger subagent에 전달하지 않는다 (cheap parser only). subagent 결과의 `llm_tags`에 중복 기입하지 않는다.
+
+#### 4.5.2 — type_subtype 결정 (CRIT-IDX6)
+
+1. `data/type-taxonomy.yml`을 인덱서 시작 시 1회 로드 (`{Type: [subtype, ...]}`).
+2. 현재 row의 `type` 값이 taxonomy의 키 (`Sprite`, `AudioClip`, `Texture`, `Mesh`, `Prefab`)에 포함되지 않으면 결정 단계를 건너뛰고 `type_subtype` 필드 생략.
+3. 결정 우선 순서 (위가 더 신뢰):
+   1. **`.meta` 헤더 sniff** — `.meta` YAML 본문의 importer 설정에서 결정적 신호를 우선 채택.
+      - `Sprite`: importer `TextureImporter`의 `spriteImportMode` (`Single` → `single`, `Multiple` → `spritesheet`, `Polygon` → `single`). UI Canvas 참조가 있으면 `ui` 우선.
+      - `AudioClip`: `AudioImporter`의 `loadType` + `forceToMono` + 길이 hint (`loop` 또는 길이 > 30s → `music`, ambience 디렉터리 컨텍스트 → `ambience`, voice 디렉터리 → `voice`, 그 외 짧은 클립 → `sfx`).
+      - `Texture`: `TextureImporter`의 `textureType` (`Default` → `albedo`, `NormalMap` → `normal-map`, `Cubemap` → `cubemap`, `Sprite` → 별도 Sprite type으로 분기, mask channel 표시 → `mask`).
+      - `Mesh`: `ModelImporter`의 `animationType` 또는 skinned mesh import 옵션 (`Generic`/`Humanoid` → `skinned`, 그 외 → `static`).
+      - `Prefab`: `.prefab` 본문에서 `m_Component` 종류 sniff (`Animator` + `SkinnedMeshRenderer` → `character`, `Canvas`/`RectTransform` 루트 → `ui`, `ParticleSystem`/`VisualEffect` → `vfx`, `MonoBehaviour`만 → `system`, 그 외 → `environment`).
+   2. **`filename_signals`** (Step 4.5.1 결과) — `texture:normal-map` 같은 신호가 있으면 해당 subtype 후보로 매핑. taxonomy 후보에 존재할 때만 채택.
+   3. **경로 컨텍스트** — `Assets/UI/...` → `ui`, `Assets/Audio/Music/...` → `music`, `Assets/VFX/...` → `vfx` 등 휴리스틱. 두 단계 모두 미결정일 때만 사용.
+4. 세 단계를 거쳐 결정된 subtype을 `<Type>/<subtype>` 형식으로 `type_subtype` 필드에 기입. taxonomy 후보에 없는 값이면 생략.
+5. Unity Editor 미실행 환경에서는 importer 정보 결손으로 결정률이 떨어질 수 있다 (Risks §R2 참조). 결정 불가는 필드 생략으로 안전 fallback.
+
+#### 4.5.3 — curated labels yml 병합 (CRIT-IDX7)
+
+1. **로드**: indexer 시작 시 `<unity-project>/.claude/unity-assets.labels.yml`을 1회 glob (존재하지 않으면 건너뜀).
+2. **검증**: 존재하면 YAML parse → `schemas/curated-labels.json.schema.json`으로 검증. 실패 시 stdout에 경고 1줄 emit 후 yml 무시 (정상 인덱싱 계속).
+3. **매칭**: 각 asset의 `path`에 대해 `labels` 객체의 key를 정의 순서대로 glob 매칭 시도. **첫 매칭만 적용** (정의 순서가 우선순위).
+4. **union 적용 순서**: minimal row의 최종 `labels` 필드는 다음 union을 다음 순서로 적용한다. 우선순위는 **yml > .meta labels > llm_tags**이며 충돌(중복 라벨) 시 yml 라벨이 보존된다.
+   1. yml 매칭 라벨 배열 (있으면)
+   2. asset-tagger가 emit한 `.meta` labels (이미 row의 `labels` 필드에 들어 있음)
+   3. llm_tags에서 라벨 형태로 인정된 토큰 (kebab-case + 단일 단어 등 휴리스틱; 충돌 없는 항목만)
+5. **차분 로그**: union 적용 전후의 `labels` 배열이 다른 row에 대해 stdout에 `[unity-assets:index] curated-labels override <path>: <before> -> <after>` 1줄 emit (사용자가 brownfield breaking change를 인지하도록, Risks §R5).
+6. 본 단계는 asset-tagger subagent에 전달하지 않는다 — indexer-local merge.
+
 ### Step 5 — finalize
 
 모든 wave 성공 종료 후:
@@ -127,3 +167,6 @@ CONVENTION.md §1 참조. 핵심:
 - **CRIT-IDX2 (Idempotency)**: no-op 경로 byte-identity.
 - **CRIT-IDX3 (Incremental accuracy)**: K개 파일 수정 → 정확히 K개 row만 변경.
 - **CRIT-IDX4 (Subagent + 크래시 복구)**: 60s 타임아웃 + R1 복구 분기.
+- **CRIT-IDX5 (filename 신호)**: Step 4.5.1 — `filename-conventions.json`의 8개 regex로 파일명에서 신호 추출 → `filename_signals` 필드. 픽스처 8종에서 5/8 이상.
+- **CRIT-IDX6 (서브타입 분류)**: Step 4.5.2 — `.meta` + 헤더 sniff + filename_signals 결합으로 `type_subtype` 결정. 픽스처 20 에셋 중 18/20 (Editor 실행 시) 또는 14/20 (Editor 미실행 시).
+- **CRIT-IDX7 (큐레이션 라벨)**: Step 4.5.3 — `unity-assets.labels.yml`의 glob 매핑이 `labels` 필드에 union 반영, 우선순위 yml > .meta > llm_tags. 픽스처 5개 glob 매핑에서 5/5.

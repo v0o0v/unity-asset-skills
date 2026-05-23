@@ -26,6 +26,11 @@
           "category_hint": {
             "type": ["string", "null"],
             "description": "선택적 카테고리 힌트. 예: 'environment', 'character', 'ui'. 없으면 null."
+          },
+          "subtype_hint": {
+            "type": ["string", "null"],
+            "pattern": "^[A-Za-z]+/[a-z0-9-]+$",
+            "description": "선택적 Unity asset subtype 힌트 (CRIT-SCH6). type-taxonomy.yml 기반 '<Type>/<subtype>' 형식. 예: 'Sprite/ui', 'AudioClip/music', 'AudioClip/sfx', 'Texture/normal-map'. asset-record.minimal.json의 type_subtype 필드와 동일 패턴. 결정 불가시 null 또는 생략."
           }
         }
       }

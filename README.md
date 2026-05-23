@@ -99,6 +99,27 @@ doctor는 read-only — 어떤 파일도 수정·생성·삭제하지 않는다.
 
 ---
 
+## Wave 1 search uplift — 신규 측정 지표 + 라우팅 보강
+
+V0.1.0 후속 patch에서 search 성공률 향상을 위한 6개 lever를 추가했다. 자세한 plan은 [.omc/plans/wave1-search-uplift.md](./.omc/plans/wave1-search-uplift.md).
+
+**현재 측정 지표 (`tests/run-crit-suite.ps1`)**:
+
+- 기존 18개 CRIT-* (EE1·IDX1~4·SCH1~4·ORC1~4·CNV1~4·DOC1) + 신규 6개 = 총 24개.
+- **CRIT-SCH1 강화** — Recall@3 ≥ 8/15 + **카테고리별 분해**: `_last-run.json::crit-sch1.by_category`가 5개 카테고리(character / environment / audio / ui / scriptable_object) 별 hit/total을 표기. 카테고리당 최소 1개 골든 쿼리 보장.
+- **CRIT-SCH5** (한↔영 별칭 사전, `data/aliases.yml`): 한글 token이 1차 라우팅 prompt에 영문 alias와 함께 전달.
+- **CRIT-SCH6** (sub-intent subtype 필터): `subtype_hint`로 `Sprite/ui`, `AudioClip/music` 같은 후보를 좁혀 4개 subtype-aware 쿼리 중 3/4 top-3 정답.
+- **CRIT-SCH7** (3단 자동 fallback): max confidence < 0.40 시 top-K 확장 → map-reduce 강제 → `search-result.json::status = "no_match"`. `status` enum은 `ok` / `no_match` / `no_query`.
+- **CRIT-IDX5** (filename 컨벤션 regex): 8종 패턴(`_FX`, `Loop_`, `SFX_`, `_normal`, `_mask`, `_albedo`, `9-Slice`, `Tilesheet`)에서 5/8 이상 정확한 `filename_signals` 추출.
+- **CRIT-IDX6** (Unity type 서브분류): `data/type-taxonomy.yml` 기반으로 20개 픽스처에서 `type_subtype` 18/20 결정.
+- **CRIT-IDX7** (프로젝트 큐레이션 라벨): `<unity-project>/.claude/unity-assets.labels.yml`의 glob → 라벨 매핑이 `assets.jsonl::labels`에 union 반영. 우선순위 `unity-assets.labels.yml > .meta labels > llm_tags`.
+
+**asset-record 스키마**: `filename_signals`와 `type_subtype`은 minimal 스키마에 **optional**로 추가됨 — minimal 7 required 필드 계약은 그대로 유지되며 두 필드는 미결정 시 생략 가능 (자세한 정의는 [CONVENTION.md §4](./CONVENTION.md) optional 필드 공지 참조).
+
+신규 CRIT만 실행: `pwsh tests/run-crit-suite.ps1 -Only SCH5,SCH6,SCH7,IDX5,IDX6,IDX7`.
+
+---
+
 ## 비-목표
 
 - 외부 Anthropic API 직접 호출 (모든 분석은 Claude Code 내부)

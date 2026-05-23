@@ -20,7 +20,10 @@ unity-asset-skills/
 ├── agents/
 │   └── asset-tagger.md          ← 플러그인 자체 subagent
 ├── skills/
-│   ├── unity-assets-index/SKILL.md
+│   ├── unity-assets-index/
+│   │   ├── SKILL.md
+│   │   └── lib/
+│   │       └── filename-conventions.json   ← Wave 1 B8: regex 신호 매핑
 │   ├── unity-assets-search/SKILL.md
 │   ├── unity-assets-build/SKILL.md
 │   └── unity-assets-doctor/SKILL.md
@@ -31,7 +34,15 @@ unity-asset-skills/
 │   ├── package-record.json
 │   ├── state.json.schema.json
 │   ├── search-routing.json.schema.json
-│   └── search-result.json.schema.json
+│   ├── search-result.json.schema.json
+│   └── curated-labels.json.schema.json     ← Wave 1 B2: 프로젝트 큐레이션 라벨 yml 검증용
+├── data/                                    ← Wave 1 신규: 플러그인 내장 사전·taxonomy
+│   ├── aliases.yml                          ← B11: 한↔영 별칭 사전 (글로벌)
+│   ├── aliases.json.schema.json             ← B11: aliases.yml 스키마
+│   └── type-taxonomy.yml                    ← B1: Unity 타입 서브분류 taxonomy
+├── docs/
+│   └── samples/
+│       └── unity-assets.labels.example.yml  ← B2: 프로젝트 라벨 yml 사용 예시
 ├── examples/
 │   └── unity-assets.yml
 └── tests/
@@ -106,9 +117,29 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
 
 헤더 텍스트(em-dash `—` 포함)·블록 펜스 표기를 변경하면 lint가 깨진다. 신규 tier 추가 시 동일 패턴으로 헤더+블록을 함께 추가하고 schemas/에 파일도 만든다.
 
+### 3.1 CRIT-* 등록부 (Wave 1 신규)
+
+전체 CRIT-* 목록과 실행 진입점은 `tests/run-crit-suite.ps1::$registry`. Wave 1 search uplift(`/.omc/plans/wave1-search-uplift.md` Step 1~6)에서 추가된 6개:
+
+| CRIT-ID | Lever | 검증 스크립트 | 건드리는 파일 (요약) | plan 참조 |
+|---------|-------|---------------|----------------------|-----------|
+| **CRIT-SCH5** | B11 한↔영 별칭 사전 | `tests/unit/test-alias-expansion.ps1` | `data/aliases.yml`, `data/aliases.json.schema.json`, `skills/unity-assets-search/SKILL.md` Step 4.0 | Step 1 |
+| **CRIT-IDX5** | B8 filename 컨벤션 regex | `tests/unit/test-filename-signals.ps1` | `skills/unity-assets-index/lib/filename-conventions.json`, `schemas/asset-record.minimal.json::filename_signals` (optional), `skills/unity-assets-index/SKILL.md` | Step 2 |
+| **CRIT-SCH1 (강화)** | A7 카테고리별 Recall@3 | `tests/unit/test-recall-at-3.ps1` (확장) | `tests/golden-queries.yml::category`, `_last-run.json::crit-sch1.by_category` 5종 표기 | Step 3 |
+| **CRIT-IDX6** | B1 Unity type 서브분류 | `tests/unit/test-subtype-classification.ps1` | `data/type-taxonomy.yml`, `schemas/asset-record.minimal.json::type_subtype` (optional), `skills/unity-assets-index/SKILL.md`, `skills/unity-assets-index/prompts/subagent-tagger.md` | Step 4 |
+| **CRIT-SCH6** | C2 sub-intent subtype 필터 | `tests/unit/test-subtype-filter.ps1` | `schemas/search-routing.json.schema.json::sub_intents[].subtype_hint` (optional), `skills/unity-assets-search/SKILL.md` Step 4·5.1.4 | Step 4 |
+| **CRIT-IDX7** | B2 프로젝트 큐레이션 라벨 | `tests/unit/test-curated-labels.ps1` | `docs/samples/unity-assets.labels.example.yml`, `schemas/curated-labels.json.schema.json`, `skills/unity-assets-index/SKILL.md`, `skills/unity-assets-doctor/SKILL.md` | Step 5 |
+| **CRIT-SCH7** | C7 retrieval 3단 fallback | `tests/unit/test-three-stage-fallback.ps1` | `schemas/search-result.json.schema.json::status` enum, `skills/unity-assets-search/SKILL.md` Step 5.3 | Step 6 |
+
+기존 18개(EE1·IDX1~4·SCH1~4·ORC1~4·CNV1~4·DOC1) + 신규 6개 = suite 총 24개 항목. `pwsh tests/run-crit-suite.ps1 -Only SCH5,SCH6,SCH7,IDX5,IDX6,IDX7`로 신규만 실행 가능.
+
+CRIT-CNV1 schema-doc-sync 정합성: optional 필드(`filename_signals`, `type_subtype`)는 minimal 7 required 필드와 별도로 §4 fenced 블록에 추가되며, lint는 추출 JSON과 `schemas/asset-record.minimal.json`을 canonical 비교하므로 양쪽이 byte-identical이면 통과한다.
+
 ---
 
 ## 4. Asset Record per-tier 필드 deltas
+
+> **Wave 1 optional 필드 (CRIT-IDX5 / CRIT-IDX6) 공지**: `filename_signals`와 `type_subtype`은 Wave 1에서 minimal 스키마에 optional로 추가되었다. **required 7 필드 계약은 그대로**이며, lint(CRIT-CNV1)는 본 문서의 fenced JSON 블록과 `schemas/asset-record.minimal.json`의 byte-identical만 검증한다 — optional 필드 존재 여부는 minimal 7 약속에 영향을 주지 않는다.
 
 ## Asset Record — minimal
 
@@ -159,6 +190,16 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
     "llm_summary": {
       "type": "string",
       "description": "asset-tagger subagent가 생성한 한 줄 요약 (한글). 검색 매칭에 사용된다."
+    },
+    "filename_signals": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "(optional) indexer cheap parser가 filename regex (skills/unity-assets-index/lib/filename-conventions.json)로 추출한 신호. 예: [\"vfx\"], [\"loop\", \"audio:music\"], [\"texture:normal-map\"]. minimal 7 필드 약속에는 영향을 주지 않는 추가 신호 필드 (CRIT-IDX5)."
+    },
+    "type_subtype": {
+      "type": "string",
+      "pattern": "^[A-Za-z]+/[a-z0-9-]+$",
+      "description": "(optional) Unity 에셋 타입의 서브분류. data/type-taxonomy.yml의 후보 중 1개를 \"<Type>/<subtype>\" 형식으로 (예: \"Sprite/ui\", \"AudioClip/music\"). .meta + 파일 헤더 sniff + filename_signals를 종합하여 indexer가 결정. 결정 불가시 필드 자체 생략 (CRIT-IDX6)."
     }
   }
 }
@@ -340,6 +381,20 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
   - `manifest.json::version != search-result.json::manifest_version` → 거부 사유 `stale_search`. Search 자동 재실행 후에도 불일치면 사용자에게 안내 후 중단.
   - 파일 부재 또는 `manifest_version` 누락 → `stale_search`와 동일하게 취급.
 
+### 6.2 labels 우선순위 (Wave 1 B2, CRIT-IDX7)
+
+`assets.jsonl` 한 행의 `labels` 필드는 세 source의 union이다. 충돌 시 다음 우선순위로 보존한다.
+
+```
+unity-assets.labels.yml  >  .meta labels  >  llm_tags
+```
+
+- **1순위 — `<unity-project>/.claude/unity-assets.labels.yml`** (CRIT-IDX7): 프로젝트 큐레이터가 작성한 glob → 라벨 매핑. 스키마는 `schemas/curated-labels.json.schema.json` 준수. 예시는 `docs/samples/unity-assets.labels.example.yml`. indexer는 asset path를 정의 순서대로 첫 매칭만 적용.
+- **2순위 — `.meta` AssetLabels**: Unity Editor가 부여한 표준 라벨.
+- **3순위 — asset-tagger `llm_tags`**: subagent가 생성한 의미 태그. 단, `unity-assets.labels.yml`이나 `.meta`와 동일 키 충돌 시 1·2순위 라벨이 보존되며 llm_tags는 union에 흡수만 된다 (덮어쓰기 금지).
+
+**Brownfield 공시**: 사용자가 기존 인덱스 위에 `unity-assets.labels.yml`을 신규 추가하면, 다음 `/unity-assets:index` 실행에서 해당 glob 매칭 행의 `assets.jsonl::labels`가 union 결과로 shift한다. indexer는 union 적용 전·후의 labels differential을 stdout에 로그하여 brownfield breaking change 가시성을 확보한다 (Risk R5 mitigation).
+
 ---
 
 ## 7. Search reasoning 풀-피델리티 규칙
@@ -351,6 +406,14 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
 - 요약·재작성 금지. 후속 retrieval·debugging·Orchestrator UX(사용자 확인 분기에서 화면에 표시)에서 필요하다.
 
 CRIT-ORC4 (Search → Orch 계약)가 본 규칙을 검증한다.
+
+### 7.1 Search routing 보강 (Wave 1)
+
+`/unity-assets:search` 1차 라우팅 단계(`skills/unity-assets-search/SKILL.md` Step 4)는 다음 세 추가 규약을 따른다 — plan v6 Wave 1 search uplift 산출물.
+
+- **Alias hint workflow (CRIT-SCH5, Step 4.0)**: raw 사용자 쿼리에서 한글 token을 추출하여 `data/aliases.yml`을 lookup. 매칭된 한↔영 alias 쌍을 routing prompt에 `--- Aliases hint ---` 섹션으로 첨부하고, 라우팅 출력의 `sub_intents[].category_hint`에 alias 매칭 결과를 반영한다.
+- **`subtype_hint` 필터 메커닉 (CRIT-SCH6)**: `schemas/search-routing.json.schema.json::sub_intents[].subtype_hint`는 `type_subtype`과 동일한 정규식 패턴(`^[A-Za-z]+/[a-z0-9-]+$`, 예 `Sprite/ui`). Step 5.1.4 retrieval은 `subtype_hint`가 주어지면 `assets.jsonl` 행의 `type_subtype`이 정확히 일치하는 후보만 1차 고려하고, 일치 후보가 K 미만이면 같은 `type`의 다른 subtype을 차순위로 보강한다.
+- **3-stage fallback 마커 (CRIT-SCH7, Step 5.3)**: Step 5.1 또는 5.2 완료 후 max confidence < 0.40이면 (1) top-K 확장 → (2) map-reduce 강제 → (3) `search-result.json::status = "no_match"` + `suggested_action = "reindex"` 순으로 진입. 각 단계 진입 시 stdout에 정해진 마커 로그 1회 emit (`fallback stage 1 / 2 / 3`). 단계 1·2에서 confidence ≥ 0.40 후보가 발견되면 즉시 정상 결과로 종료.
 
 ---
 

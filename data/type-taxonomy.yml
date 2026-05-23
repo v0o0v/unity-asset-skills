@@ -1,0 +1,38 @@
+# type-taxonomy.yml — Unity 에셋 타입의 서브분류 정의 (Wave 1 plan Step 4 / CRIT-IDX6).
+#
+# indexer가 .meta + 파일 헤더 sniff + filename_signals를 종합해 type_subtype 필드를
+# 결정할 때 사용할 후보 집합. type_subtype은 "<Type>/<subtype>" 형식이며 (예: "Sprite/ui"),
+# subtype은 kebab-case 소문자.
+#
+# 결정 불가시 type_subtype 필드를 생략한다 (asset-record.minimal.json optional).
+
+Sprite:
+  - single
+  - spritesheet
+  - 9-slice
+  - ui
+
+AudioClip:
+  - sfx
+  - music
+  - ambience
+  - voice
+
+Texture:
+  - albedo
+  - normal-map
+  - mask
+  - icon
+  - cubemap
+
+Mesh:
+  - static
+  - skinned
+  - collider
+
+Prefab:
+  - character
+  - environment
+  - ui
+  - vfx
+  - system

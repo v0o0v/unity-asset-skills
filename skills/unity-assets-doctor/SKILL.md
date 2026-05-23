@@ -47,16 +47,19 @@ cwd가 Unity 프로젝트 루트일 것이라 **추정**한다. 추정이 틀리
 - **FAIL**: `Assets/` 부재 — 현재 cwd가 Unity 프로젝트 루트가 아님.
 - **권장 조치**: `Unity 프로젝트 루트로 cd 후 /unity-assets:doctor 재실행. 그 다음 /unity-assets:index 한 번 실행하면 .claude/unity-asset-index/ 디렉터리가 자동 생성됨.`
 
-### 검사 4 — unity-assets.yml valid
+### 검사 4 — unity-assets.yml valid (+ unity-assets.labels.yml 옵션)
 
 - **방법**:
   1. `.claude/unity-assets.yml` 파일 존재 확인. 부재 → "사용자 override 없음, 기본값 사용 예정"으로 PASS (선택적 설정).
   2. 존재하면 YAML parse 시도. parse 실패 → FAIL.
   3. parse 성공하면 키 셋 검증: `examples/unity-assets.yml`의 인정 키 (`index_depth`, `confidence_threshold.auto`, `confidence_threshold.confirm`, `batch_size`, `parallel_subagents`, `max_assets_in_context`, `ignore_paths`, `safety_mode`) 외에 모르는 최상위 키가 있으면 경고로 보고하되 PASS (forward compatibility).
   4. 알려진 키의 값 타입 검증 (예: `batch_size`가 integer인지). 타입 불일치 → FAIL.
-- **PASS**: 파일 부재 (기본값 사용) 또는 (parse 성공 AND 알려진 키 타입 일치).
-- **FAIL**: parse 실패 또는 알려진 키 타입 불일치.
-- **권장 조치**: `<플러그인 설치 경로>\examples\unity-assets.yml 을 프로젝트 .claude\ 로 복사 후 필요한 키만 수정. 또는 .claude/unity-assets.yml 을 삭제하면 기본값 사용.`
+  5. **부가 점검 — curated labels yml (Wave 1 / CRIT-IDX7)**: `.claude/unity-assets.labels.yml` 파일 존재 확인. 부재 → 본 부가 점검을 skip (PASS에 영향 없음, 선택적 설정).
+  6. 존재하면 YAML parse 시도. parse 실패 → FAIL (검사 4 전체가 FAIL로 강등).
+  7. parse 성공하면 `schemas/curated-labels.json.schema.json`으로 스키마 검증 (`version == 1`, `labels`는 glob → string[] 매핑). 스키마 불일치 → FAIL.
+- **PASS**: (unity-assets.yml 부재 또는 valid) AND (unity-assets.labels.yml 부재 또는 스키마 검증 통과).
+- **FAIL**: unity-assets.yml parse/타입 실패, 또는 unity-assets.labels.yml parse 실패, 또는 unity-assets.labels.yml 스키마 검증 실패.
+- **권장 조치**: `<플러그인 설치 경로>\examples\unity-assets.yml 을 프로젝트 .claude\ 로 복사 후 필요한 키만 수정. 또는 .claude/unity-assets.yml 을 삭제하면 기본값 사용. unity-assets.labels.yml 검증 실패 시 docs/samples/unity-assets.labels.example.yml 참고 후 schemas/curated-labels.json.schema.json에 맞춰 수정.`
 
 ## 출력 형식
 

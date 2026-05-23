@@ -67,3 +67,15 @@ templates:
   # === Scenes ===
   - {kind: Scene,          name: MainMenu_Scene,    dir: Assets/Scenes,                            ext: .unity,      labels: [],                   tags_hint: [scene, main-menu, ui],                                      summary_hint: "메인 메뉴 씬."}
   - {kind: Scene,          name: Gameplay_Scene,    dir: Assets/Scenes,                            ext: .unity,      labels: [],                   tags_hint: [scene, gameplay, top-down, survival],                       summary_hint: "탑다운 생존 게임플레이 씬."}
+
+  # === Wave 1 A7 추가 골든 (q11~q15) — 카테고리당 ≥ 2개 보장 ===
+  # q11 (ui): PauseMenu_UI 별도 golden — 기존 PauseMenu와 다른 패키지로 분리 신호
+  - {kind: Prefab,         name: PauseMenu_UI,      dir: Assets/Packages/UIKit/Prefabs,            ext: .prefab,     labels: [ui, menu],           tags_hint: [ui, menu, pause-menu, canvas, screen, gameplay],            summary_hint: "일시정지 메뉴 UI 화면 프리팹.",                             golden_id: pause_menu_ui}
+  # q12 (audio): SFX_Footstep 별도 golden — 캐릭터 발자국 효과음
+  - {kind: Texture,        name: SFX_Footstep_Char, dir: Assets/Packages/AudioKit/SFX,             ext: .wav,        labels: [audio, sfx],         tags_hint: [audio, sfx, footstep, character, survival],                 summary_hint: "캐릭터 발자국 효과음, 생존 게임용.",                        golden_id: sfx_footstep_audio}
+  # q13 (scriptable_object): SpawnSettings ScriptableObject — wave_config_so와 별개의 spawn config
+  - {kind: ScriptableObject, name: SpawnSettings,    dir: Assets/Packages/ZombieKit/Configs,        ext: .asset,      labels: [],                   tags_hint: [spawn, config, manager, zombie, scriptable-object],         summary_hint: "스폰 매니저 설정 ScriptableObject.",                        golden_id: spawn_settings_so}
+  # q14 (ui): HUD_Overlay 별도 golden — 게임플레이 HUD 오버레이
+  - {kind: Prefab,         name: HUD_Overlay,       dir: Assets/Packages/UIKit/Prefabs,            ext: .prefab,     labels: [ui, hud],            tags_hint: [ui, hud, overlay, canvas, gameplay, screen],                summary_hint: "게임플레이 HUD 오버레이 화면 프리팹.",                       golden_id: hud_overlay_ui}
+  # q15 (audio): Music_Combat 별도 golden — 전투 분위기 BGM
+  - {kind: Texture,        name: Music_Combat,      dir: Assets/Packages/AudioKit/Music,           ext: .wav,        labels: [audio, music],       tags_hint: [audio, music, combat, loop, bgm, survival],                 summary_hint: "전투 분위기 배경 음악, BGM 루프.",                          golden_id: music_combat_loop}

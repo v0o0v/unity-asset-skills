@@ -12,9 +12,19 @@
       "pattern": "^v\\d+\\.\\d+$",
       "description": "Search 실행 시점 인덱스 버전. Orchestrator는 manifest.json::version과 비교하여 불일치 시 'stale_search' 사유로 거부."
     },
+    "status": {
+      "type": "string",
+      "enum": ["ok", "no_match", "no_query"],
+      "default": "ok",
+      "description": "검색 결과 상태 (CRIT-SCH7). 생략 시 'ok'. 'no_match'는 3단 fallback 모두 실패 (max confidence < 0.40), 'no_query'는 malformed query (CRIT-SCH3). 'no_match' 또는 'no_query'일 때 groups는 빈 배열 허용."
+    },
+    "suggested_action": {
+      "type": ["string", "null"],
+      "description": "status가 'no_match'일 때 권장 다음 행동. 예: 'reindex' (인덱스 재생성 권장). status가 'ok'면 null 또는 생략."
+    },
     "groups": {
       "type": "array",
-      "description": "sub-intent 별 후보 그룹. Search 1차 라우팅의 sub_intents와 1:1 대응.",
+      "description": "sub-intent 별 후보 그룹. Search 1차 라우팅의 sub_intents와 1:1 대응. status가 'no_match' 또는 'no_query'일 때 빈 배열 허용.",
       "items": {
         "type": "object",
         "required": ["sub_intent", "candidates"],

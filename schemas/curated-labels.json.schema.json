@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/curated-labels.json.schema.json",
+  "title": "Curated Labels — unity-assets.labels.yml",
+  "description": "프로젝트 큐레이션 라벨 yml의 형식. <unity-project>/.claude/unity-assets.labels.yml에 위치하며 indexer가 로드한다. glob 경로 패턴마다 강제 적용할 라벨 배열을 정의. 우선순위는 yml > .meta labels > llm_tags이며 충돌 시 yml 라벨이 보존된다 (Wave 1 plan Step 5 / CRIT-IDX7).",
+  "type": "object",
+  "required": [
+    "version",
+    "labels"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "스키마 버전. 현재 1만 허용. 추후 호환성을 위해 명시적 필드로 유지."
+    },
+    "labels": {
+      "type": "object",
+      "description": "key는 Unity 프로젝트 루트 기준 glob 경로 패턴 (예: \"Assets/Characters/Zombies/**\"). value는 해당 glob에 매칭되는 에셋에 강제 union으로 추가할 라벨 배열. 정의 순서를 우선순위로 사용 (첫 매칭만 적용).",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      }
+    }
+  }
+}

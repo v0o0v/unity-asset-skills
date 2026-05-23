@@ -18,22 +18,32 @@ BATCH_ID: <재시도 추적용 식별자>
 ASSETS:
   - asset_path: <에셋 절대 경로>
     meta_path: <짝꿍 .meta 파일 절대 경로>
+    type_subtype: <"<Type>/<subtype>" 또는 null>   # Indexer가 .meta + 헤더 sniff + filename_signals로 사전 결정한 서브타입. null이면 미결정.
   - asset_path: ...
     meta_path: ...
+    type_subtype: ...
   ...
 ```
 
 ASSETS 개수는 `batch_size` (보통 20개)입니다.
 
+### type_subtype passthrough 규약 (CRIT-IDX6)
+
+- `type_subtype`은 부모 Indexer가 이미 결정한 값입니다. **절대 덮어쓰거나 재계산하지 마세요.** null이면 null 그대로, 결정값이면 그 값 그대로 출력 행에 옮겨 적습니다.
+- `type_subtype`의 값을 `llm_tags`에 중복 기입하지 마세요 (예: `Sprite/ui`가 들어왔다고 `ui` 토큰을 llm_tags에 강제 추가 금지). llm_tags는 의미 태그를 자유롭게 선택하되 서브타입 신호와 별도로 판단합니다.
+- 본 분석에서는 `type_subtype`을 입력 컨텍스트로만 활용 (예: `Sprite/ui`이면 사용자가 UI 용도임을 알리는 단서)하고 출력은 입력 그대로 passthrough.
+
 ## TASK
 
 각 ASSETS 항목에 대해 정확히 한 줄의 JSON을 stdout으로 emit하세요. 총 N개 입력 → N개 출력 줄. **순서는 입력 순서와 동일**.
 
-## OUTPUT 행 스키마 (minimal, 7 필드)
+## OUTPUT 행 스키마 (minimal, 7 필드 + optional passthrough)
 
 ```json
-{"guid":"<string>","path":"<string>","name":"<string>","type":"<string>","labels":["..."],"llm_tags":["..."],"llm_summary":"<한글 한 줄>"}
+{"guid":"<string>","path":"<string>","name":"<string>","type":"<string>","labels":["..."],"llm_tags":["..."],"llm_summary":"<한글 한 줄>","type_subtype":"<Type>/<subtype>"}
 ```
+
+`type_subtype`은 입력에서 null이 아닌 경우에만 출력 행에 포함합니다 (null이면 키 자체 생략). 7개 minimal 필드는 항상 emit, `type_subtype`은 conditional passthrough.
 
 필드 정의:
 
@@ -44,8 +54,9 @@ ASSETS 개수는 `batch_size` (보통 20개)입니다.
 | `name` | asset_path의 파일 stem (확장자 제외). |
 | `type` | meta_path의 importer 또는 asset_path 확장자로 판정. `Prefab` / `Material` / `Texture` / `AnimatorController` / `ScriptableObject` / `MonoScript` / `Scene` / `Mesh` / `AudioClip` / `ComputeShader` / `Shader` / `Sprite` / `Font` / `VideoClip` / `AnimationClip` 중 하나, 또는 `.asset` 확장자의 경우 ScriptableObject로 판정. |
 | `labels` | meta_path Read → YAML `labels:` 배열 그대로. 없으면 `[]`. |
-| `llm_tags` | 의미 태그 4~8개. kebab-case 영문. 카테고리(예: `medieval`, `sci-fi`, `nature`) + 형태/스타일(예: `modular`, `stylized`, `low-poly`) + 분위기/용도(예: `exterior`, `interior`, `prop`, `weapon`) 골고루. |
+| `llm_tags` | 의미 태그 4~8개. kebab-case 영문. 카테고리(예: `medieval`, `sci-fi`, `nature`) + 형태/스타일(예: `modular`, `stylized`, `low-poly`) + 분위기/용도(예: `exterior`, `interior`, `prop`, `weapon`) 골고루. `type_subtype`의 값은 절대 llm_tags에 중복 기입 금지. |
 | `llm_summary` | **한글 한 줄 요약**. 검색 매칭에 사용되므로 구체적 어휘를 포함하세요 (분위기·재질·기능). 마침표로 종료. 한 문장. |
+| `type_subtype` | 입력으로 받은 값을 그대로 passthrough. 절대 덮어쓰지 마세요. null이면 키 자체를 출력 행에서 생략. |
 
 ## 분석 가이드
 
@@ -57,7 +68,7 @@ ASSETS 개수는 `batch_size` (보통 20개)입니다.
 ## 출력 제약 (엄격)
 
 - 모든 ASSETS 입력에 대해 **정확히 한 줄씩** emit. 누락·중복 금지.
-- 7 필드 외 신규 키 추가 금지. additionalProperties=false 스키마.
+- 7 minimal 필드 + 입력에서 받은 경우의 `type_subtype` passthrough 외 신규 키 추가 금지. additionalProperties=false 스키마.
 - JSON 외 출력 금지 — 설명, markdown, prose, comment, code fence, 빈 줄 모두 0줄.
 - 분석 실패한 항목도 자기 행은 emit: `llm_tags: []`, `llm_summary: "(분석 실패)"`. Indexer가 `state.json::bad_rows`로 재시도 라우팅함.
 - 60초 wall-clock 예산. 초과하면 Indexer가 batch를 `pending_batches`로 재큐잉.
