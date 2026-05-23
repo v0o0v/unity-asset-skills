@@ -1,6 +1,6 @@
 ---
 name: search
-description: 자연어 의도로 Unity 에셋 인덱스를 검색한다. LLM-as-Search dual-call (1차 multi-category 라우팅 + sub-intent 분해 → 2차 sub-intent별 retrieval). 기본 package-first drill-down, 2000+ 에셋 또는 index_depth=rich 시 map-reduce sliding chunks 자동 전환. 결과는 schemas/search-result.json.schema.json 형식으로 .claude/unity-asset-index/search-result.json에 atomic 저장. /unity-assets:pick으로 대화형 narrowing.
+description: 자연어 의도로 Unity 에셋 인덱스를 검색한다. LLM-as-Search dual-call (1차 multi-category 라우팅 + sub-intent 분해 → 2차 sub-intent별 retrieval). 기본 package-first drill-down, 2000+ 에셋 또는 index_depth=rich 시 map-reduce sliding chunks 자동 전환. 결과는 schemas/search-result.json.schema.json 형식으로 .claude/unity-asset-index/search-result.json에 atomic 저장. 후속 narrowing·학습 데이터 누적은 별도 `/unity-assets:pick` 스킬 참조.
 ---
 
 # /unity-assets:search — Unity 에셋 LLM-as-Search
@@ -14,7 +14,7 @@ CONVENTION.md를 계약 진실원으로 참조한다.
 ## 호출 패턴
 
 - `/unity-assets:search "<자연어 의도>"` — 1회성 검색.
-- `/unity-assets:pick` — 직전 검색 결과에서 대화형 narrowing (사용자가 sub-intent 또는 후보를 선택).
+- 후속 narrowing 및 학습 데이터 누적은 별도 `/unity-assets:pick` 스킬 (`skills/unity-assets-pick/SKILL.md`). Search 결과의 후보 1개를 row-index로 선택하면 `feedback.jsonl`에 한 줄 append되어 다음 검색의 prompt hint로 활용된다.
 
 ## 사전 조건
 
@@ -69,6 +69,29 @@ CONVENTION.md를 계약 진실원으로 참조한다.
 5. `aliases.yml` 부재·파싱 실패 시 fail-fast 하지 않고 경고 로그 1회 emit 후 hint 블록 생략하고 진행.
 
 이 hint는 routing subagent가 `category_hint` 및 `subtype_hint` 결정 시 한글 도메인 어휘를 영문 카테고리로 연결하는 데 사용된다.
+
+#### 4.0.5 Past picks hint 조립 (Wave 2 / CRIT-EVAL3 연계)
+
+`<unity-project>/.claude/unity-asset-index/feedback.jsonl`이 존재하면 routing prompt에 학습 hint를 첨부한다:
+
+1. 파일을 한 줄씩 읽어 마지막 N=20 행만 유지.
+2. 각 행은 `schemas/feedback-row.json.schema.json` 통과해야 함. **파싱 실패·스키마 위반 행**은 skip하고 stdout에 다음 한 줄 로그 emit (한 번만, 마지막 line 번호 기준):
+   ```
+   [unity-assets:search] feedback row skipped: line <N>
+   ```
+3. 유효 행만 모아 sub-intent별 그룹으로 묶고, 각 sub-intent에서 `picked_guid`의 빈도 상위 3개를 추출.
+4. routing prompt 본문 앞(Aliases hint 블록 다음)에 다음 형식 첨부:
+
+```
+--- Past picks hint ---
+sub_intent="좀비 적 캐릭터": [<guid1>, <guid2>, <guid3>]
+sub_intent="메인 메뉴 UI": [<guid4>]
+---
+```
+
+5. 매칭 결과가 0건이면 hint 블록 자체를 생략. `feedback.jsonl` 부재 시도 동일하게 생략하고 정상 진행.
+
+이 hint는 routing이 sub_intent를 분해할 때 과거 사용자 선택 빈도 정보를 prompt 컨텍스트에 노출한다. 본격 confidence boost는 Wave 3 calibration에서 처리하며, 본 단계에서는 prompt hint 수준에 그친다.
 
 #### 4.1 라우팅 호출
 
@@ -205,9 +228,9 @@ stdout에 다음을 emit:
 - 발견된 sub-intent 수와 각 그룹의 top-3 후보 (path + confidence + reasoning 한 줄 요약).
 - 다음 행동 제안: `/unity-assets:pick`으로 선택, 또는 `/unity-assets:build "..."`로 바로 진행.
 
-## `/unity-assets:pick` (대화형 narrowing)
+## `/unity-assets:pick` (별도 스킬)
 
-이전 `search-result.json` 읽음 → 사용자에게 sub-intent 목록과 그 안의 후보를 번호로 제시 → 사용자 선택 → 선택을 반영한 새 `search-result.json`을 작성 (`groups` 필드를 사용자가 좁힌 후보만 남도록 수정, `manifest_version`은 그대로 유지).
+후속 narrowing은 `skills/unity-assets-pick/SKILL.md` 참조. 본 search 스킬은 `search-result.json`을 작성하기만 하고, pick은 row-index로 1개 후보를 선택하여 `feedback.jsonl`에 한 줄 append한다 (CRIT-SCH8). pick이 누적한 학습 데이터는 위 Step 4.0.5의 "Past picks hint"가 다음 검색에 활용한다.
 
 ## 산출 파일
 

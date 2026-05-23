@@ -105,6 +105,21 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
 2. `assets.jsonl.partial` 존재 AND `state.json::in_progress_run == false` → orphan으로 폐기, 변경 셋 전체 재실행.
 3. `assets.jsonl.partial` 부재 → 정상 경로. 첫 wave 시작 전 `in_progress_run = true` 설정.
 
+### 2.5 feedback.jsonl append-only 예외 (Wave 2 / CRIT-EVAL3, CRIT-SCH8)
+
+`<unity-project>/.claude/unity-asset-index/feedback.jsonl`은 `/unity-assets:pick`이 한 줄씩 누적하는 append-only 파일이다. orchestrator-audit.jsonl (§2.3)과 동일한 시맨틱이지만, 추가로 다음 규약을 가진다.
+
+- **락 파일 패턴**: 동시 호출에서 행 깨짐을 방지하기 위해 `feedback.jsonl.lock` 파일을 atomic 생성(`New-Item -ItemType File -ErrorAction Stop`)으로 짧게 점유한 후 `Add-Content -Encoding utf8`로 한 줄 append, 끝나면 lock 제거.
+- **재시도**: 락 contention 시 최대 3회 50ms 간격 재시도. 모두 실패하면 stdout에 정확히 `[unity-assets:pick] error: feedback.jsonl locked` 출력 후 exit 1.
+- **손상 행 처리**: 다음 `/unity-assets:search` 호출의 Step 4.0.5(Past picks hint) reader는 손상된 행(파싱 실패 또는 schema 위반)을 skip하고 stdout에 정확히 다음 한 줄 emit (마지막 손상 line 번호):
+  ```
+  [unity-assets:search] feedback row skipped: line <N>
+  ```
+  search 동작은 중단되지 않으며, 손상 행 외의 유효 행만 prompt hint로 활용된다.
+- **doctor 검사**: `/unity-assets:doctor` 검사 5(Wave 2)가 행 단위 schema 검증을 read-only로 수행한다. 자동 복구·삭제는 금지 (§2.3 read-only 원칙).
+- **위치**: `<unity-project>/.claude/unity-asset-index/feedback.jsonl` (per-project).
+- **스키마**: `schemas/feedback-row.json.schema.json` 필수 8 필드 (`ts, query, sub_intent_id, picked_guid, candidate_guids, confidence_before, confidence_after, source`).
+
 ---
 
 ## 3. schema-doc-sync 계약 (CRIT-CNV1)
@@ -134,6 +149,20 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
 기존 18개(EE1·IDX1~4·SCH1~4·ORC1~4·CNV1~4·DOC1) + 신규 6개 = suite 총 24개 항목. `pwsh tests/run-crit-suite.ps1 -Only SCH5,SCH6,SCH7,IDX5,IDX6,IDX7`로 신규만 실행 가능.
 
 CRIT-CNV1 schema-doc-sync 정합성: optional 필드(`filename_signals`, `type_subtype`)는 minimal 7 required 필드와 별도로 §4 fenced 블록에 추가되며, lint는 추출 JSON과 `schemas/asset-record.minimal.json`을 canonical 비교하므로 양쪽이 byte-identical이면 통과한다.
+
+### 3.2 CRIT-* 등록부 (Wave 2 신규)
+
+Wave 2 metrics infra(`/.omc/plans/wave2-metrics-infra.md` Step 1~6)에서 추가된 5개:
+
+| CRIT-ID | Lever | 검증 스크립트 | 건드리는 파일 (요약) | plan 참조 |
+|---------|-------|---------------|----------------------|-----------|
+| **CRIT-EVAL1** | A1 골든셋 30+ 정합성 | `tests/unit/test-golden-set-integrity.ps1` | `tests/golden-queries.yml` (q01~q31, 카테고리당 ≥6), `tests/fixtures/_templates/assets.yml` | Step 1 |
+| **CRIT-EVAL2** | A2 Precision@3 측정 | `tests/unit/test-precision-at-3.ps1` | `_last-run.json::crit-eval2 = {overall, by_category, n_queries}`, threshold overall ≥ 0.50 / 카테고리 ≥ 0.40 | Step 2 |
+| **CRIT-SCH8** | C5 /unity-assets:pick 슬래시 커맨드 | `tests/unit/test-pick-command.ps1` | `skills/unity-assets-pick/SKILL.md`, manifest_version 핸드셰이크, feedback.jsonl 1줄 append | Step 3 |
+| **CRIT-EVAL3** | A6 feedback.jsonl 스키마 | `tests/unit/test-feedback-jsonl.ps1` | `schemas/feedback-row.json.schema.json`, 동시 append 안정성, corruption skip 로그 | Step 4 |
+| **CRIT-EVAL4** | A8 A/B harness 결정성 | `tests/unit/test-ab-harness.ps1` | `tests/harness/{run-ab,fake-search-runner}.ps1`, `tests/_ab-result.json.schema.json`, byte-identical 재현 | Step 5 |
+
+Wave 1까지 24개 + Wave 2 신규 5개 = suite 총 29개 항목. `pwsh tests/run-crit-suite.ps1 -Only EVAL,SCH8`로 Wave 2 신규만 실행 가능.
 
 ---
 
@@ -372,6 +401,7 @@ CRIT-CNV1 schema-doc-sync 정합성: optional 필드(`filename_signals`, `type_s
 | `state.json` | `:index` | `:index`, `:search` (mtime/version 비교) | R1 in_progress_run / completed_batches 포함. |
 | `search-result.json` | `:search` | `:build` | manifest_version 필드 (regex `^v\d+\.\d+$`) 포함. |
 | `orchestrator-audit.jsonl` | `:build` (append) | `:build` post-run 검증, `tests/unit/test-scope-guard.ps1` | append-only, 한 줄당 한 호출. |
+| `feedback.jsonl` | `:pick` (append) | `:search` Step 4.0.5 (Past picks hint), `:doctor` 검사 5 | append-only, 락 + Add-Content. 행 스키마 `schemas/feedback-row.json.schema.json`. §2.5 예외 규약. Wave 2 신규. |
 | `<unity-project>/.claude/unity-assets.yml` | 사용자 | 모든 스킬 | 선택 — 미지정 시 examples/unity-assets.yml의 기본값. |
 
 ### 6.1 manifest_version 핸드셰이크
@@ -492,9 +522,38 @@ subagent는 위 튜플 중 하나를 만드는 계획 단계를 거부하고 `sc
 
 ---
 
-## 11. 변경 통제
+## 11. 평가 지표 (Wave 2 metrics infra)
 
-- 본 문서는 v0.1.0 lock 상태이며, plan v6와 1:1 동기화한다.
+Wave 2 metrics infra(plan `/.omc/plans/wave2-metrics-infra.md`)가 추가한 평가 인프라.
+
+### 11.1 측정 지표
+
+- **Recall@3** (CRIT-SCH1, Wave 1 강화): 골든 쿼리(`tests/golden-queries.yml::sch1_recall`, 31개)에서 `expected_golden_id`가 fake-search top-3에 있는지의 비율. by_category(`character/environment/audio/ui/scriptable_object` 5종) 분해 포함. `_last-run.json::crit-sch1.by_category` 기록.
+- **Precision@3** (CRIT-EVAL2, Wave 2 신규): 같은 쿼리에서 `top-3 ∩ expected_relevant_ids` 크기를 3으로 나눈 평균. by_category 분해 포함. `_last-run.json::crit-eval2` 기록. 임계치 overall ≥ 0.50, 카테고리 ≥ 0.40.
+- **누적 사용자 선택**: `<unity-project>/.claude/unity-asset-index/feedback.jsonl` (CRIT-EVAL3, §2.5). `/unity-assets:pick`이 1줄씩 append. 다음 `/unity-assets:search`의 routing prompt가 "Past picks hint" 블록으로 활용.
+
+### 11.2 골든셋 카테고리 분포 규약
+
+`tests/golden-queries.yml::sch1_recall`은 5개 카테고리 각각 ≥ 6 쿼리 보유. `expected_relevant_ids` 다중 라벨링(1~5개)으로 Precision@3 측정. `docs/golden-set-labeling.md` 라벨링 가이드 참조.
+
+### 11.3 A/B harness 사용
+
+```powershell
+.\tests\harness\run-ab.ps1 `
+  -VariantA <path-to-aliases-A.yml> `
+  -VariantB <path-to-aliases-B.yml> `
+  -Seed 42 `
+  -Out tests\_ab-result.json
+```
+
+`tests/harness/fake-search-runner.ps1`이 결정적이라 동일 seed → byte-identical 재현 가능 (CRIT-EVAL4). 결과는 `tests/_ab-result.json.schema.json` 준수. 변형 가능 차원은 aliases.yml(현재 지원). taxonomy / SKILL.md routing prompt / filename conventions는 향후 fake-search-runner가 추가로 읽도록 확장 가능.
+
+---
+
+## 12. 변경 통제
+
+- 본 문서는 v0.1.0 lock 상태이며, plan v6 + Wave 1/2 plan과 동기화한다.
 - per-tier 필드 deltas (섹션 4) 변경 시 `schemas/asset-record.<tier>.json` 동시 수정 필수 (CRIT-CNV1 lint가 PASS여야 함).
 - R3 안내 문구(섹션 9)는 `tests/e2e/test-ee1-zombie-survival.ps1`이 string match로 검증하므로 한 글자도 변경하지 않는다.
 - 금지 튜플(섹션 10.1) 변경 시 `tests/unit/test-scope-guard.ps1`의 단언 목록도 동시 수정.
+- §2.5(feedback.jsonl) 또는 §11(평가 지표) 규약 변경 시 `tests/unit/test-pick-command.ps1`, `tests/unit/test-feedback-jsonl.ps1`, `tests/unit/test-precision-at-3.ps1`, `tests/unit/test-ab-harness.ps1` 단언이 동시에 통과해야 한다.

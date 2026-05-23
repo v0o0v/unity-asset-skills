@@ -6,100 +6,230 @@
 #
 # golden_id는 _templates/assets.yml의 항목과 1:1 매핑. 빌더가 GUID를 계산한다.
 
-# === CRIT-SCH1: recall@3 (15 쿼리, 정답 GUID 라벨링, 카테고리별 분해) ===
-# 각 쿼리는 expected_golden_id 1개 (top-3 안에 포함되면 PASS).
-# category: character | environment | audio | ui | scriptable_object — Wave 1 CRIT-SCH1 강화 (A7).
+# === CRIT-SCH1: recall@3 (31 쿼리, 정답 GUID 라벨링, 카테고리별 분해) ===
+# 각 쿼리는 expected_golden_id 1개 (top-3 안에 포함되면 Recall@3 PASS).
+# Wave 2 EVAL1: expected_relevant_ids 1~3개 추가 — Precision@3 측정용 (top-3 ∩ expected_relevant_ids / 3).
+# 보존적 라벨링 원칙: "합리적 평가자가 사용자 의도를 충족한다고 판단할 후보"만 포함.
+# category: character | environment | audio | ui | scriptable_object — 카테고리당 ≥ 6 보장.
 sch1_recall:
   - id: q01
     query: "황폐한 분위기의 중세 마을 외벽"
     expected_golden_id: medieval_wall_modular
+    expected_relevant_ids: [medieval_wall_modular, medieval_tavern]
     category: environment
-    rationale: "stone-wall + modular + village + medieval 컨텍스트. decoy: SciFi_Wall_01도 'exterior'/'modular' 공유."
+    rationale: "stone-wall + modular + village + medieval 컨텍스트. decoy: SciFi_Wall_01도 'exterior'/'modular' 공유. Tavern은 같은 황폐 중세 마을 외관 카테고리."
 
   - id: q02
     query: "탑다운 게임 좀비 적 캐릭터"
     expected_golden_id: zombie_basic_enemy
+    expected_relevant_ids: [zombie_basic_enemy, zombie_fast_runner]
     category: character
-    rationale: "zombie + enemy + humanoid + survival. decoy: SciFi_Crate 'prop'도 character 비-적합."
+    rationale: "zombie + enemy + humanoid + survival. decoy: SciFi_Crate 'prop'도 character 비-적합. Zombie_Fast는 같은 좀비 적 카테고리."
 
   - id: q03
     query: "탑다운 생존자 플레이어"
     expected_golden_id: survivor_player_topdown
+    expected_relevant_ids: [survivor_player_topdown]
     category: character
-    rationale: "survivor + player + top-down + survival. decoy: FPS_Player가 'player'/'character' 공유."
+    rationale: "survivor + player + top-down + survival. decoy: FPS_Player가 'player'/'character' 공유. 단일 — 정확한 생존자 플레이어 프리팹 한 개."
 
   - id: q04
     query: "좀비 wave 스폰 설정"
     expected_golden_id: wave_config_so
+    expected_relevant_ids: [wave_config_so, spawn_settings_so]
     category: scriptable_object
-    rationale: "wave + spawn + config + ScriptableObject. decoy: SpawnManager 스크립트가 'spawn'/'wave' 공유."
+    rationale: "wave + spawn + config + ScriptableObject. SpawnSettings도 spawn config SO로 의도 일치."
 
   - id: q05
     query: "숲 환경 나무 식생"
     expected_golden_id: tree_pine_vegetation
+    expected_relevant_ids: [tree_pine_vegetation, tree_oak_vegetation]
     category: environment
-    rationale: "tree + pine + forest + vegetation. decoy: Tree_Oak도 모든 태그 공유 — name disambiguation 필요."
+    rationale: "tree + pine + forest + vegetation. Tree_Oak도 같은 자연 숲 vegetation 카테고리."
 
   - id: q06
     query: "메인 메뉴 UI"
     expected_golden_id: main_menu_ui
+    expected_relevant_ids: [main_menu_ui, menu_controller_script]
     category: ui
-    rationale: "ui + menu + main-menu + canvas. decoy: PauseMenu도 'menu'/'canvas' 공유."
+    rationale: "ui + menu + main-menu + canvas. MenuController는 메뉴 UI를 구동하는 스크립트로 '메인 메뉴 UI' 작업의 동반 자산으로 합리적 후보."
 
   - id: q07
     query: "긴장감 있는 생존 게임 배경 음악"
     expected_golden_id: music_tension_survival
+    expected_relevant_ids: [music_tension_survival]
     category: audio
-    rationale: "audio + music + tension + survival. decoy: SFX_Zombie도 'audio'/'survival' 공유."
+    rationale: "audio + music + tension + survival. 단일 — 긴장감 한정. Music_Combat은 분위기 다름, Music_Ambient는 평화로움."
 
   - id: q08
     query: "이끼 낀 석재 머티리얼"
     expected_golden_id: medieval_wall_modular  # Wall_01 prefab은 Stone_Mossy material을 참조; 의미적으로 가장 가까운 hit
+    expected_relevant_ids: [medieval_wall_modular, mossy_stone_material]
     category: environment
-    rationale: "이 쿼리는 Stone_Mossy material을 노린다. fixture에서 정답 후보는 Stone_Mossy material 또는 그 material을 사용하는 Wall_01 prefab. 빌더의 GUID 계산은 medieval_wall_modular = Wall_01 prefab을 가리킨다 (의미적으로 합리)."
+    rationale: "이 쿼리는 Stone_Mossy material을 노린다. fixture에서 정답 후보는 Stone_Mossy material 또는 그 material을 사용하는 Wall_01 prefab. mossy_stone_material이 직접 매칭."
 
   - id: q09
     query: "탑다운 좀비 survival 게임 프로토타입에 필요한 핵심 적 프리팹"
     expected_golden_id: zombie_basic_enemy
+    expected_relevant_ids: [zombie_basic_enemy, zombie_fast_runner]
     category: character
-    rationale: "긴 쿼리 — 'zombie + survival + 핵심 적 프리팹'의 의미 추출 필요."
+    rationale: "긴 쿼리 — 'zombie + survival + 핵심 적 프리팹'의 의미 추출 필요. Zombie_Fast도 같은 좀비 적."
 
   - id: q10
     query: "탑다운 생존 게임용 모듈형 중세 마을 외관 에셋"
     expected_golden_id: medieval_wall_modular
+    expected_relevant_ids: [medieval_wall_modular, medieval_tavern]
     category: environment
-    rationale: "복합 의미 — top-down + 생존 게임용 + 모듈형 + 중세 + 마을 + 외관."
+    rationale: "복합 의미 — top-down + 생존 게임용 + 모듈형 + 중세 + 마을 + 외관. Tavern도 같은 중세 마을 외관 카테고리(weathered medieval village exterior)."
 
   # === Wave 1 A7: 카테고리 분해를 위해 q11~q15 추가 (카테고리당 ≥ 2개 보장) ===
   - id: q11
     query: "일시정지 메뉴 UI 화면"
     expected_golden_id: pause_menu_ui
+    expected_relevant_ids: [pause_menu_ui]
     category: ui
-    rationale: "ui + menu + pause-menu + canvas. decoy: MainMenu도 'menu'/'canvas' 공유."
+    rationale: "ui + menu + pause-menu + canvas. decoy: MainMenu도 'menu'/'canvas' 공유. 단일 — '일시정지' 정확 매칭만."
 
   - id: q12
     query: "발자국 효과음 캐릭터"
     expected_golden_id: sfx_footstep_audio
+    expected_relevant_ids: [sfx_footstep_audio, sfx_footstep_basic]
     category: audio
-    rationale: "audio + sfx + footstep + character. decoy: SFX_Zombie도 'audio'/'sfx' 공유."
+    rationale: "audio + sfx + footstep + character. SFX_Footstep도 같은 발자국 효과음 카테고리."
 
   - id: q13
     query: "스폰 매니저 설정 ScriptableObject"
     expected_golden_id: spawn_settings_so
+    expected_relevant_ids: [spawn_settings_so, wave_config_so]
     category: scriptable_object
-    rationale: "spawn + config + ScriptableObject. decoy: WaveConfig도 'spawn'/'config' 공유."
+    rationale: "spawn + config + ScriptableObject. WaveConfig도 spawn config SO."
 
   - id: q14
     query: "게임플레이 HUD 오버레이"
     expected_golden_id: hud_overlay_ui
+    expected_relevant_ids: [hud_overlay_ui, hud_general]
     category: ui
-    rationale: "ui + hud + overlay + canvas + gameplay. decoy: MainMenu/PauseMenu도 'ui'/'canvas' 공유."
+    rationale: "ui + hud + overlay + canvas + gameplay. HUD도 같은 HUD 오버레이 UI 카테고리."
 
   - id: q15
     query: "전투 분위기 BGM 음악"
     expected_golden_id: music_combat_loop
+    expected_relevant_ids: [music_combat_loop]
     category: audio
-    rationale: "audio + music + combat + loop + bgm. decoy: Music_Tension도 'audio'/'music' 공유."
+    rationale: "audio + music + combat + loop + bgm. 단일 — '전투 분위기' 한정 (Tension/Ambient는 분위기 다름)."
+
+  # === Wave 2 EVAL1: q16~q31 카테고리당 ≥ 6 보장 (character/environment/audio/ui/scriptable_object) ===
+  - id: q16
+    query: "빠른 좀비 추격자 적 캐릭터"
+    expected_golden_id: zombie_fast_runner
+    expected_relevant_ids: [zombie_fast_runner, zombie_basic_enemy]
+    category: character
+    rationale: "zombie + fast + enemy + character. Zombie_Basic도 좀비 적 카테고리."
+
+  - id: q17
+    query: "탑다운 생존자 애니메이션 컨트롤러"
+    expected_golden_id: survivor_animator
+    expected_relevant_ids: [survivor_animator, survivor_player_topdown]
+    category: character
+    rationale: "survivor + animator + locomotion + top-down. Survivor_Player prefab도 같은 '탑다운 생존자' 캐릭터 작업의 동반 자산."
+
+  - id: q18
+    query: "좀비 적 애니메이션 컨트롤러"
+    expected_golden_id: zombie_animator
+    expected_relevant_ids: [zombie_animator]
+    category: character
+    rationale: "zombie + enemy + animator + locomotion. 단일 — 캐릭터 종류 다른 Survivor_AC는 의도 불일치."
+
+  - id: q19
+    query: "참나무 자연 숲 환경"
+    expected_golden_id: tree_oak_vegetation
+    expected_relevant_ids: [tree_oak_vegetation, tree_pine_vegetation]
+    category: environment
+    rationale: "oak + tree + forest + nature. Tree_Pine도 같은 숲 자연 vegetation."
+
+  - id: q20
+    query: "중세 마을 선술집 건물"
+    expected_golden_id: medieval_tavern
+    expected_relevant_ids: [medieval_tavern, medieval_wall_modular]
+    category: environment
+    rationale: "medieval + village + tavern + building. Wall_01 (House_Small/Tavern과 같은 MedievalVillage 패키지의 모듈형 건물 외벽)도 '중세 마을 건물' 작업의 동반 자산."
+
+  - id: q21
+    query: "이끼 낀 weathered 석재 material"
+    expected_golden_id: mossy_stone_material
+    expected_relevant_ids: [mossy_stone_material]
+    category: environment
+    rationale: "mossy + stone + weathered + material. 단일 — material 직접 매칭."
+
+  - id: q22
+    query: "좀비 신음 효과음 SFX"
+    expected_golden_id: sfx_zombie_groan
+    expected_relevant_ids: [sfx_zombie_groan]
+    category: audio
+    rationale: "zombie + sfx + audio. 단일 — '좀비 신음' 정확 매칭만."
+
+  - id: q23
+    query: "기본 발자국 효과음 audio"
+    expected_golden_id: sfx_footstep_basic
+    expected_relevant_ids: [sfx_footstep_basic, sfx_footstep_audio]
+    category: audio
+    rationale: "footstep + sfx + audio. SFX_Footstep_Char도 같은 발자국 효과음 카테고리."
+
+  - id: q24
+    query: "평화로운 환경 ambient 배경 음악"
+    expected_golden_id: music_ambient_peaceful
+    expected_relevant_ids: [music_ambient_peaceful]
+    category: audio
+    rationale: "ambient + music + peaceful + atmosphere. 단일 — '평화로움' 한정 (Tension/Combat은 분위기 다름)."
+
+  - id: q25
+    query: "게임플레이 HUD 화면 UI"
+    expected_golden_id: hud_general
+    expected_relevant_ids: [hud_general, hud_overlay_ui]
+    category: ui
+    rationale: "hud + overlay + canvas + gameplay. HUD_Overlay도 같은 HUD UI 카테고리."
+
+  - id: q26
+    query: "메뉴 전환 컨트롤러 스크립트"
+    expected_golden_id: menu_controller_script
+    expected_relevant_ids: [menu_controller_script]
+    category: ui
+    rationale: "menu + controller + navigation + script. 단일 — MonoScript 한정."
+
+  - id: q27
+    query: "옵션 설정 메뉴 UI 화면"
+    expected_golden_id: options_menu_ui
+    expected_relevant_ids: [options_menu_ui]
+    category: ui
+    rationale: "options + settings + menu + canvas. 단일 — '옵션 설정' 정확 매칭만."
+
+  - id: q28
+    query: "적 능력치 설정 ScriptableObject"
+    expected_golden_id: enemy_stats_config
+    expected_relevant_ids: [enemy_stats_config]
+    category: scriptable_object
+    rationale: "enemy + stats + config + ScriptableObject. 단일 — '적 능력치' 한정."
+
+  - id: q29
+    query: "플레이어 능력치 ScriptableObject 설정"
+    expected_golden_id: player_stats_config
+    expected_relevant_ids: [player_stats_config]
+    category: scriptable_object
+    rationale: "player + stats + config + ScriptableObject. 단일 — '플레이어 능력치' 한정."
+
+  - id: q30
+    query: "오디오 믹서 볼륨 설정 ScriptableObject"
+    expected_golden_id: audio_mixer_config
+    expected_relevant_ids: [audio_mixer_config]
+    category: scriptable_object
+    rationale: "audio + mixer + volume + config + ScriptableObject. 단일 — 오디오 도메인 한정."
+
+  - id: q31
+    query: "루트 테이블 드롭 보상 설정 ScriptableObject"
+    expected_golden_id: loot_table_config
+    expected_relevant_ids: [loot_table_config]
+    category: scriptable_object
+    rationale: "loot + drop + table + reward + config + ScriptableObject. 단일 — 루트 테이블 한정."
 
 # === CRIT-ORC1: 라우팅 정확도 (10 쿼리: 6 multi + 4 single) ===
 # 각 쿼리는 expected_multi (bool) 라벨링.

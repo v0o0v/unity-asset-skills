@@ -24,7 +24,7 @@ $testsRoot = Split-Path $PSScriptRoot -Parent
 $fixture = Join-Path $testsRoot 'fixtures/unity-200'
 & (Join-Path $testsRoot 'fixtures/_builder.ps1') -Target 'unity-200' -Force | Out-Null
 
-# golden-queries.yml 파싱 (간단 — category 필드 포함)
+# golden-queries.yml 파싱 (간단 — category 필드 포함, Wave 2 EVAL1: expected_relevant_ids 지원)
 function Read-GoldenQueries {
     param([string] $Path)
     $content = Get-Content $Path -Raw
@@ -35,12 +35,23 @@ function Read-GoldenQueries {
         $queryMatch = [regex]::Match($b, 'query:\s*"([^"]+)"')
         $goldenMatch = [regex]::Match($b, 'expected_golden_id:\s*([a-zA-Z0-9_]+)')
         $categoryMatch = [regex]::Match($b, 'category:\s*([a-zA-Z_]+)')
+        $relevantMatch = [regex]::Match($b, 'expected_relevant_ids:\s*\[([^\]]*)\]')
         if ($idMatch.Success -and $queryMatch.Success -and $goldenMatch.Success) {
+            $relevantIds = @()
+            if ($relevantMatch.Success) {
+                $inner = $relevantMatch.Groups[1].Value
+                $relevantIds = $inner -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+            }
+            if ($relevantIds.Count -eq 0) {
+                # backward-compatible: missing field → [expected_golden_id]
+                $relevantIds = @($goldenMatch.Groups[1].Value)
+            }
             $queries += @{
-                id        = $idMatch.Groups[1].Value
-                query     = $queryMatch.Groups[1].Value
-                golden_id = $goldenMatch.Groups[1].Value
-                category  = if ($categoryMatch.Success) { $categoryMatch.Groups[1].Value } else { 'unknown' }
+                id            = $idMatch.Groups[1].Value
+                query         = $queryMatch.Groups[1].Value
+                golden_id     = $goldenMatch.Groups[1].Value
+                category      = if ($categoryMatch.Success) { $categoryMatch.Groups[1].Value } else { 'unknown' }
+                relevant_ids  = $relevantIds
             }
         }
     }
@@ -68,6 +79,23 @@ function Get-GoldenGuidMap {
         spawn_settings_so       = 'Assets/Packages/ZombieKit/Configs/SpawnSettings.asset'
         hud_overlay_ui          = 'Assets/Packages/UIKit/Prefabs/HUD_Overlay.prefab'
         music_combat_loop       = 'Assets/Packages/AudioKit/Music/Music_Combat.wav'
+        # Wave 2 EVAL1 추가 골든 (q16~q31) — 기존 템플릿에 golden_id 부여한 항목 + 신규 6개
+        zombie_fast_runner      = 'Assets/Packages/ZombieKit/Prefabs/Zombie_Fast.prefab'
+        survivor_animator       = 'Assets/Packages/ZombieKit/Animators/Survivor_AC.controller'
+        zombie_animator         = 'Assets/Packages/ZombieKit/Animators/Zombie_AC.controller'
+        tree_oak_vegetation     = 'Assets/Packages/NatureForest/Prefabs/Tree_Oak.prefab'
+        medieval_tavern         = 'Assets/Packages/MedievalVillage/Prefabs/Tavern.prefab'
+        mossy_stone_material    = 'Assets/Packages/MedievalVillage/Materials/Stone_Mossy.mat'
+        sfx_zombie_groan        = 'Assets/Packages/AudioKit/SFX/SFX_Zombie.wav'
+        sfx_footstep_basic      = 'Assets/Packages/AudioKit/SFX/SFX_Footstep.wav'
+        music_ambient_peaceful  = 'Assets/Packages/AudioKit/Music/Music_Ambient.wav'
+        hud_general             = 'Assets/Packages/UIKit/Prefabs/HUD.prefab'
+        menu_controller_script  = 'Assets/Packages/UIKit/Scripts/MenuController.cs'
+        options_menu_ui         = 'Assets/Packages/UIKit/Prefabs/OptionsMenu.prefab'
+        enemy_stats_config      = 'Assets/Packages/ZombieKit/Configs/EnemyStatsConfig.asset'
+        player_stats_config     = 'Assets/Packages/ZombieKit/Configs/PlayerStatsConfig.asset'
+        audio_mixer_config      = 'Assets/Packages/AudioKit/Configs/AudioMixerConfig.asset'
+        loot_table_config       = 'Assets/Packages/ZombieKit/Configs/LootTableConfig.asset'
     }
     $result = @{}
     foreach ($id in $map.Keys) {

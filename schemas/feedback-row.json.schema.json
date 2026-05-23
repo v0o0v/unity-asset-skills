@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["ts", "query", "sub_intent_id", "picked_guid", "candidate_guids", "confidence_before", "confidence_after", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "ts": {"type": "string", "format": "date-time"},
+    "query": {"type": "string"},
+    "sub_intent_id": {"type": "string"},
+    "picked_guid": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "candidate_guids": {"type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{32}$"}, "minItems": 1, "maxItems": 50},
+    "confidence_before": {"type": "number", "minimum": 0, "maximum": 1},
+    "confidence_after": {"type": "number", "minimum": 0, "maximum": 1},
+    "source": {"type": "string", "enum": ["pick", "auto-approve", "fallback-stage-3"]}
+  }
+}

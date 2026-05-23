@@ -9,6 +9,7 @@ tests/integration/testbed/.claude/_debug/
 
 # CRIT 테스트 실행 결과
 tests/_last-run.json
+tests/_ab-result.json
 tests/fixtures/unity-50/Assets/
 tests/fixtures/unity-200/Assets/
 tests/fixtures/unity-1200/Assets/

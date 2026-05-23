@@ -1,6 +1,10 @@
 # tests/ — CRIT 스위트
 
-`unity-asset-skills`의 18개 합격 기준(CRIT-EE1·CRIT-IDX1~4·CRIT-SCH1~4·CRIT-ORC1~4·CRIT-CNV1~4·CRIT-DOC1)을 검증하는 자동화 테스트.
+`unity-asset-skills`의 **29개 합격 기준**을 검증하는 자동화 테스트.
+
+- Wave 0 (18개): CRIT-EE1 · CRIT-IDX1~4 · CRIT-SCH1~4 · CRIT-ORC1~4 · CRIT-CNV1~4 · CRIT-DOC1
+- Wave 1 (6개, plan `.omc/plans/wave1-search-uplift.md`): CRIT-SCH5/6/7 + CRIT-IDX5/6/7
+- Wave 2 (5개, plan `.omc/plans/wave2-metrics-infra.md`): CRIT-EVAL1/2/3/4 + CRIT-SCH8
 
 ## 사전 조건
 
@@ -17,20 +21,48 @@ cd D:\ClaudeCowork\unitySkills\unity-asset-skills\tests
 .\run-crit-suite.ps1
 ```
 
-종료 코드 0 = 18개 모두 PASS. 1 = 하나 이상 FAIL.
+종료 코드 0 = 29개 모두 PASS. 1 = 하나 이상 FAIL.
 
 ## 부분 실행 (`-Only` 플래그)
 
 `-Only`는 CRIT-ID 접두어 필터. 콤마 구분, case-insensitive. 각 접두어는 해당 접두어로 시작하는 모든 CRIT-ID 테스트와 매치.
 
 ```powershell
-.\run-crit-suite.ps1 -Only IDX          # CRIT-IDX1..4
-.\run-crit-suite.ps1 -Only SCH,ORC      # CRIT-SCH1..4 + CRIT-ORC1..4
-.\run-crit-suite.ps1 -Only CNV,DOC      # CRIT-CNV1..4 + CRIT-DOC1
-.\run-crit-suite.ps1 -Only EE           # CRIT-EE1 단독
+.\run-crit-suite.ps1 -Only IDX               # CRIT-IDX1..7
+.\run-crit-suite.ps1 -Only SCH,ORC           # CRIT-SCH1..8 + CRIT-ORC1..4
+.\run-crit-suite.ps1 -Only CNV,DOC           # CRIT-CNV1..4 + CRIT-DOC1
+.\run-crit-suite.ps1 -Only EE                # CRIT-EE1 단독
+.\run-crit-suite.ps1 -Only EVAL              # CRIT-EVAL1..4 (Wave 2 메트릭)
+.\run-crit-suite.ps1 -Only EVAL,SCH8         # Wave 2 신규 5개만
 ```
 
-지원 접두어: `EE`, `IDX`, `SCH`, `ORC`, `CNV`, `DOC`.
+지원 접두어: `EE`, `IDX`, `SCH`, `ORC`, `CNV`, `DOC`, `EVAL`.
+
+## 골든셋 카테고리 분포 (Wave 2)
+
+`tests/golden-queries.yml::sch1_recall`은 5개 카테고리 각각 ≥ 6 쿼리.
+
+| 카테고리 | 쿼리 수 | 예시 ID |
+|----------|---------|---------|
+| character | 6 | q02, q03, q09, q16, q17, q18 |
+| environment | 7 | q01, q05, q08, q10, q19, q20, q21 |
+| audio | 6 | q07, q12, q15, q22, q23, q24 |
+| ui | 6 | q06, q11, q14, q25, q26, q27 |
+| scriptable_object | 6 | q04, q13, q28, q29, q30, q31 |
+
+각 쿼리는 단일 `expected_golden_id` + 1~5개 `expected_relevant_ids`. 라벨링 가이드는 [docs/golden-set-labeling.md](../docs/golden-set-labeling.md).
+
+## A/B harness (Wave 2)
+
+```powershell
+.\harness\run-ab.ps1 `
+  -VariantA ..\data\aliases.yml `
+  -VariantB <대체 aliases.yml> `
+  -Seed 42 `
+  -Out _ab-result.json
+```
+
+결과는 `tests/_ab-result.json.schema.json` 준수. 같은 seed → byte-identical (CRIT-EVAL4 단언).
 
 ## 단독 실행 (스크립트 직접)
 

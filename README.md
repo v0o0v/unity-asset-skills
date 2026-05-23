@@ -2,7 +2,7 @@
 
 Unity 에셋 인지형 Claude Code 플러그인. 자연어 한 줄로 프로젝트의 이미 설치된 에셋을 검색하고, 씬·프리팹·ScriptableObject·스크립트 생성까지 자동화한다.
 
-- **4개 슬래시 커맨드**: `/unity-assets:index`, `/unity-assets:search`, `/unity-assets:build`, `/unity-assets:doctor`
+- **5개 슬래시 커맨드**: `/unity-assets:index`, `/unity-assets:search`, `/unity-assets:pick`, `/unity-assets:build`, `/unity-assets:doctor`
 - **외부 API 0**: 모든 의미 분석은 Claude Code 세션 내부 batch subagent. 별도 API 키 불필요.
 - **인프라 0**: embedding·벡터 DB 없음. LLM-as-Search.
 - **지원 플랫폼**: V1은 **Windows 전용**. macOS / Linux는 V1 범위 외.
@@ -54,11 +54,12 @@ claude
 
 # [5] 헬스체크 — 모든 의존성이 OK 한지 확인
 /unity-assets:doctor
-# 기대 결과: 4개 항목 모두 ✓
+# 기대 결과: 5개 항목 모두 ✓
 #   ✓ Unity Editor reachable via MCP for Unity (mcp__manage_scene 호출 성공)
 #   ✓ unity-mcp-skill global skill present (~/.claude/skills/unity-mcp-skill/SKILL.md)
 #   ✓ Project .claude/ structure ready (또는 자동 생성 안내)
 #   ✓ unity-assets.yml valid (없으면 examples/ 에서 복사 안내)
+#   ✓ feedback.jsonl: <ok>/<total> rows valid, 0 corrupted (또는: not yet present, Wave 2 신규)
 
 # [6] 첫 인덱싱
 /unity-assets:index
@@ -86,14 +87,15 @@ doctor는 read-only — 어떤 파일도 수정·생성·삭제하지 않는다.
 
 ---
 
-## 4개 슬래시 커맨드
+## 5개 슬래시 커맨드
 
 | 커맨드 | 책임 | 산출 파일 |
 |--------|------|-----------|
 | `/unity-assets:index` | 프로젝트 에셋을 2-layer 인덱스로 수집 (filesystem 1차 + unity-mcp 온디맨드 deep-fetch). asset-tagger subagent fan-out으로 의미 태그 부여. 증분 + R1 크래시 복구. | `<unity-project>/.claude/unity-asset-index/{manifest.json, packages.jsonl, assets.jsonl, state.json}` |
 | `/unity-assets:search "..."` | 자연어 의도 → multi-category 라우팅 → sub-intent별 retrieval (package-first drill-down 기본, 2000+ 또는 rich 시 map-reduce). | `<unity-project>/.claude/unity-asset-index/search-result.json` |
+| `/unity-assets:pick <row-index>` (Wave 2) | 직전 search-result.json의 row-index로 후보 1개 선택 → feedback.jsonl에 한 줄 append. 다음 search의 routing prompt가 "Past picks hint"로 활용 (학습 데이터 누적). | `<unity-project>/.claude/unity-asset-index/feedback.jsonl` (append) |
 | `/unity-assets:build "..."` | search-result.json 기반 confidence-gated Orchestrator. 신선한 search-result.json 없으면 자동 Search 호출 (R3 안내). 씬/프리팹/스크립트 생성까지 자동, 파괴적 작업 금지. | scene 변경 + `orchestrator-audit.jsonl` append |
-| `/unity-assets:doctor` | 4개 의존성 read-only 헬스체크 (Unity Editor, unity-mcp-skill, .claude/ 구조, unity-assets.yml). | stdout 4행 ✓/✗ + 종료 코드 |
+| `/unity-assets:doctor` | 5개 의존성 read-only 헬스체크 (Unity Editor, unity-mcp-skill, .claude/ 구조, unity-assets.yml, feedback.jsonl 행 스키마). | stdout 5행 ✓/✗ + 종료 코드 |
 
 자세한 호출 흐름·계약은 [CONVENTION.md](./CONVENTION.md), 내부 개발자 가이드는 [AGENTS.md](./AGENTS.md), 플러그인을 실제 Unity 프로젝트에서 시험하며 동시에 개발하는 워크플로는 [docs/dev-loop.md](./docs/dev-loop.md).
 
@@ -117,6 +119,50 @@ V0.1.0 후속 patch에서 search 성공률 향상을 위한 6개 lever를 추가
 **asset-record 스키마**: `filename_signals`와 `type_subtype`은 minimal 스키마에 **optional**로 추가됨 — minimal 7 required 필드 계약은 그대로 유지되며 두 필드는 미결정 시 생략 가능 (자세한 정의는 [CONVENTION.md §4](./CONVENTION.md) optional 필드 공지 참조).
 
 신규 CRIT만 실행: `pwsh tests/run-crit-suite.ps1 -Only SCH5,SCH6,SCH7,IDX5,IDX6,IDX7`.
+
+---
+
+## Wave 2 metrics infra — 평가 인프라 + `/unity-assets:pick`
+
+V0.1.0 두 번째 후속 patch. 검색 품질을 측정 가능하게 만드는 5개 lever 추가. 자세한 plan: [.omc/plans/wave2-metrics-infra.md](./.omc/plans/wave2-metrics-infra.md).
+
+**현재 측정 지표 (`tests/run-crit-suite.ps1` 총 29개 CRIT)**:
+
+- Wave 1까지 24개 + Wave 2 신규 5개 = 29개.
+- **CRIT-EVAL1** (골든셋 정합성): 골든 쿼리 ≥ 30개, 5개 카테고리 각 ≥ 6개 보장, 모든 쿼리에 `expected_relevant_ids` 다중 라벨링.
+- **CRIT-EVAL2** (Precision@3): `top-3 ∩ expected_relevant_ids / 3` 평균. `_last-run.json::crit-eval2 = {overall, by_category, n_queries}`. 임계 overall ≥ 0.50, 카테고리 ≥ 0.40.
+- **CRIT-SCH8** (`/unity-assets:pick` 슬래시 커맨드): row-index로 1개 후보 선택 → manifest_version 핸드셰이크 + feedback.jsonl 한 줄 append + 정확한 stdout 4종 메시지.
+- **CRIT-EVAL3** (feedback.jsonl 행 스키마): `schemas/feedback-row.json.schema.json` 8 필수 필드 검증. corruption 감지 + reader skip 로그.
+- **CRIT-EVAL4** (A/B harness 결정성): `tests/harness/run-ab.ps1`이 두 variant aliases.yml을 동일 골든셋으로 실행 → `tests/_ab-result.json` 산출. 동일 seed → byte-identical, 동일 variant → delta 0.
+
+**`/unity-assets:pick` 사용 흐름** (Wave 2 신규 5번째 커맨드):
+
+```powershell
+/unity-assets:search "메인 메뉴 UI"
+# → search-result.json 생성, groups에 후보 K개씩
+
+/unity-assets:pick 0
+# → feedback.jsonl에 한 줄 append
+# stdout: [unity-assets:pick] recorded: <picked_guid>
+
+# 다음 검색에서 routing prompt가 "Past picks hint" 블록으로 활용
+/unity-assets:search "또 다른 UI 메뉴"
+```
+
+**A/B harness 사용** (CRIT-EVAL4 검증 인프라):
+
+```powershell
+.\tests\harness\run-ab.ps1 `
+  -VariantA data\aliases.yml `
+  -VariantB <대체 aliases.yml> `
+  -Seed 42 `
+  -Out tests\_ab-result.json
+# → Recall@3 / Precision@3 delta (B - A) 산출
+```
+
+**Wave 2 신규 CRIT만 실행**: `pwsh tests/run-crit-suite.ps1 -Only EVAL,SCH8`.
+
+**라벨링 가이드**: `expected_relevant_ids` 다중 라벨 작성 방침은 [docs/golden-set-labeling.md](./docs/golden-set-labeling.md) 참조.
 
 ---
 

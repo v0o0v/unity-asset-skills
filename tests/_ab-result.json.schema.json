@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "unity-asset-skills/_ab-result.json.schema.json",
+  "title": "A/B Harness Result",
+  "description": "tests/harness/run-ab.ps1 결과 스키마 (CRIT-EVAL4). 두 variant를 동일 골든셋으로 실행하고 delta를 산출. seed 동일 시 byte-identical 재현 가능. 본 스키마는 tests/_ab-result.json (또는 -Out 파라미터로 지정된 경로)이 통과해야 한다.",
+  "type": "object",
+  "required": ["seed", "variant_a", "variant_b", "delta"],
+  "additionalProperties": false,
+  "properties": {
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "결정성 보장용 시드. 같은 seed로 두 번 실행하면 byte-identical 결과를 산출한다 (fake-search-runner 결정성에 의존)."
+    },
+    "variant_a": { "$ref": "#/$defs/variantMetrics" },
+    "variant_b": { "$ref": "#/$defs/variantMetrics" },
+    "delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recall_at_3", "precision_at_3"],
+      "properties": {
+        "recall_at_3": { "$ref": "#/$defs/metricBlock" },
+        "precision_at_3": { "$ref": "#/$defs/metricBlock" }
+      }
+    }
+  },
+  "$defs": {
+    "variantMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "recall_at_3", "precision_at_3", "n_queries"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "recall_at_3": { "$ref": "#/$defs/metricBlock" },
+        "precision_at_3": { "$ref": "#/$defs/metricBlock" },
+        "n_queries": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "metricBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall", "by_category"],
+      "properties": {
+        "overall": { "type": "number" },
+        "by_category": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    }
+  }
+}

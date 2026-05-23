@@ -58,7 +58,8 @@ Write-Host "  version = $($json.version)"
 
 # skills 배열 검증
 Assert-True -Condition ($json.skills -is [array]) -Message "skills 필드가 array 아님"
-$expectedSkills = @('./skills/unity-assets-index/', './skills/unity-assets-search/', './skills/unity-assets-build/', './skills/unity-assets-doctor/')
+# Wave 2: pick 스킬 추가 → 5개
+$expectedSkills = @('./skills/unity-assets-index/', './skills/unity-assets-search/', './skills/unity-assets-pick/', './skills/unity-assets-build/', './skills/unity-assets-doctor/')
 foreach ($s in $expectedSkills) {
     if ($json.skills -notcontains $s) {
         throw "skills 배열에 '$s' 누락"
@@ -69,7 +70,7 @@ foreach ($s in $expectedSkills) {
     $skillMd = Join-Path $skillDir 'SKILL.md'
     Assert-True -Condition (Test-Path $skillMd) -Message "$s 내 SKILL.md 부재"
 }
-Write-Host "  skills 배열: 4개 모두 등록 + 디렉터리·SKILL.md 실재"
+Write-Host "  skills 배열: 5개 모두 등록 + 디렉터리·SKILL.md 실재"
 
 # 권장 필드 (있으면 검증, 없으면 경고)
 $recommended = @('author', 'repository', 'license', 'keywords')

@@ -47,6 +47,12 @@ $registry = @(
     @{ crit = 'CRIT-IDX5'; script = 'unit/test-filename-signals.ps1' }
     @{ crit = 'CRIT-IDX6'; script = 'unit/test-subtype-classification.ps1' }
     @{ crit = 'CRIT-IDX7'; script = 'unit/test-curated-labels.ps1' }
+    # ---- Wave 2 metrics infra (plan: .omc/plans/wave2-metrics-infra.md) ----
+    @{ crit = 'CRIT-EVAL1'; script = 'unit/test-golden-set-integrity.ps1' }
+    @{ crit = 'CRIT-EVAL2'; script = 'unit/test-precision-at-3.ps1' }
+    @{ crit = 'CRIT-SCH8';  script = 'unit/test-pick-command.ps1' }
+    @{ crit = 'CRIT-EVAL3'; script = 'unit/test-feedback-jsonl.ps1' }
+    @{ crit = 'CRIT-EVAL4'; script = 'unit/test-ab-harness.ps1' }
 )
 
 # ---- -Only 필터 ----
