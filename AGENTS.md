@@ -181,3 +181,22 @@ Wave 1이 진전시킨 CRIT-*:
 - **CRIT-CNV4 (.yml override)** 기반: examples/unity-assets.yml 기본값 잠금. 변형 테스트는 Wave 2D.
 - **CRIT-DOC1 (Doctor 진단)** 기반: doctor 4개 검사 항목 명세 (README 진단 표). SKILL.md는 Wave 2C, fixture는 Wave 2D.
 - **OQ#1, OQ#6, OQ#8 해결**: per-tier 필드 deltas / state.json 스키마 R1 / plugin.json 필드 셋.
+
+---
+
+## 10. 양방향 dev loop 워크플로
+
+실제 Unity 프로젝트(`tests/integration/testbed/`)에서 슬래시 커맨드를 시험하면서 동시에 플러그인 자체를 수정·즉시 반영하는 흐름. 두 개의 Claude Code 세션을 동시에 띄운다.
+
+| 윈도우 | cwd | 시작 명령 | 역할 |
+|--------|-----|-----------|------|
+| **Window A** (plugin dev) | `D:\…\unitySkills` | `claude` (보통 세션) | 소스 편집 (SKILL.md·스키마), testbed 산출물 진단, git commit/push |
+| **Window B** (plugin user) | `D:\…\testbed` | `claude --plugin-dir D:\…\unitySkills` | `/unity-assets:*` 시험, 문제 발견 시 A로 보고 |
+
+`--plugin-dir`로 시작하면 본 소스 트리가 그대로 등록되어 **재설치 없이 SKILL.md 수정이 다음 슬래시 호출에 즉시 반영**된다. Window A의 Claude는 testbed의 `.claude/unity-asset-index/` 산출물을 filesystem 공유로 직접 Read하여 진단한다.
+
+진단·디버깅 도구:
+- **`tools/diagnose.ps1`** (Window A): testbed의 `.claude/unity-asset-index/` 전체를 `.omc/diagnosis/<ts>/`로 timestamped 스냅샷 + `SUMMARY.md`에 핵심 행 요약 (state·manifest·assets head·packages·search-result 핸드셰이크·audit 금지 튜플·console tail). Claude는 SUMMARY.md 하나만 읽으면 됨.
+- **`tools/dump-console.ps1`** (Window B 측 PS): headless `claude -p`로 `mcp__read_console` 호출 → `testbed/.claude/_debug/console.log` 저장. 대안으로 Window B 안에서 한 줄 부탁 ("`mcp__read_console` 호출해서 console.log에 저장해줘").
+
+전체 가이드 + 진단 트리아주 룩업 표 (증상 → 의심 위치 → 수정 후보 12개 항목) + troubleshooting: [docs/dev-loop.md](./docs/dev-loop.md).
