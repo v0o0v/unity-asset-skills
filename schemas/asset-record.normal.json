@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/asset-record.normal.json",
+  "title": "Asset Record — normal",
+  "description": "normal tier = minimal 7 필드 + 5 필드 (size, dependencies, package_id, last_modified, llm_use_cases). unity-assets.yml::index_depth=normal 일 때 사용.",
+  "type": "object",
+  "required": [
+    "guid",
+    "path",
+    "name",
+    "type",
+    "labels",
+    "llm_tags",
+    "llm_summary",
+    "size",
+    "dependencies",
+    "package_id",
+    "last_modified",
+    "llm_use_cases"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "guid": {"type": "string", "description": "Unity asset GUID."},
+    "path": {"type": "string", "description": "프로젝트 루트 기준 상대 경로."},
+    "name": {"type": "string", "description": "에셋 표시 이름."},
+    "type": {"type": "string", "description": "Unity 에셋 타입."},
+    "labels": {"type": "array", "items": {"type": "string"}, "description": "Unity AssetLabels."},
+    "llm_tags": {"type": "array", "items": {"type": "string"}, "description": "asset-tagger 의미 태그."},
+    "llm_summary": {"type": "string", "description": "asset-tagger 한 줄 요약 (한글)."},
+    "size": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "에셋 파일 크기 (bytes)."
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "이 에셋이 참조하는 다른 에셋의 GUID 목록. .meta 파일 또는 직렬화된 YAML에서 추출."
+    },
+    "package_id": {
+      "type": "string",
+      "description": "이 에셋이 속한 패키지 ID (packages.jsonl의 package_id와 join)."
+    },
+    "last_modified": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 타임스탬프 (파일 mtime)."
+    },
+    "llm_use_cases": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "asset-tagger가 추론한 대표 사용 케이스 (한글 문장)."
+    }
+  }
+}

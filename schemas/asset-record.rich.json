@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/asset-record.rich.json",
+  "title": "Asset Record — rich",
+  "description": "rich tier = normal 12 필드 + 타입-discriminated extras. Prefab/Material/Animator 등 자주 쓰는 타입에 한해 신규 필드를 정의하며, 그 외 타입은 free-form `extras` 객체를 허용한다. type discriminator로 검증한다. unity-assets.yml::index_depth=rich 일 때 사용. 비-완전(non-exhaustive) 스키마 — 새 타입 추가 시 oneOf branch를 늘린다.",
+  "type": "object",
+  "required": [
+    "guid",
+    "path",
+    "name",
+    "type",
+    "labels",
+    "llm_tags",
+    "llm_summary",
+    "size",
+    "dependencies",
+    "package_id",
+    "last_modified",
+    "llm_use_cases"
+  ],
+  "properties": {
+    "guid": {"type": "string"},
+    "path": {"type": "string"},
+    "name": {"type": "string"},
+    "type": {"type": "string"},
+    "labels": {"type": "array", "items": {"type": "string"}},
+    "llm_tags": {"type": "array", "items": {"type": "string"}},
+    "llm_summary": {"type": "string"},
+    "size": {"type": "integer", "minimum": 0},
+    "dependencies": {"type": "array", "items": {"type": "string"}},
+    "package_id": {"type": "string"},
+    "last_modified": {"type": "string", "format": "date-time"},
+    "llm_use_cases": {"type": "array", "items": {"type": "string"}},
+    "component_types": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Prefab 한정: 루트 GameObject가 가진 Component 타입 이름 목록. 예: [\"Transform\", \"MeshRenderer\", \"BoxCollider\"]"
+    },
+    "shader_props": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Material 한정: shader property key → value 매핑 (free-form). 텍스처 참조·색·float 등."
+    },
+    "animator_states": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Animator / AnimatorController 한정: 상태 이름 목록."
+    },
+    "extras": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "그 외 타입의 free-form 확장 필드. 신규 필수 키 추가 금지 (스키마 안정성)."
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"type": {"const": "Prefab"}}},
+      "then": {"required": ["component_types"]}
+    },
+    {
+      "if": {"properties": {"type": {"const": "Material"}}},
+      "then": {"required": ["shader_props"]}
+    },
+    {
+      "if": {"properties": {"type": {"const": "Animator"}}},
+      "then": {"required": ["animator_states"]}
+    },
+    {
+      "if": {"properties": {"type": {"const": "AnimatorController"}}},
+      "then": {"required": ["animator_states"]}
+    }
+  ]
+}

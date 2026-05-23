@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/package-record.json",
+  "title": "Package Record",
+  "description": "packages.jsonl의 한 줄. Indexer가 assets.jsonl에서 파생하여 작성한다. Search의 package-first drill-down 1단계 입력.",
+  "type": "object",
+  "required": [
+    "package_id",
+    "root_path",
+    "asset_count",
+    "type_breakdown",
+    "llm_purpose",
+    "llm_categories"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "package_id": {
+      "type": "string",
+      "description": "패키지 식별자. Asset Store 패키지의 경우 폴더명 + 버전 (예: MedievalVillage_v2.3). 일반 폴더는 root_path 마지막 세그먼트."
+    },
+    "root_path": {
+      "type": "string",
+      "description": "패키지 루트 디렉터리 경로. 예: Assets/Packages/MedievalVillage"
+    },
+    "asset_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "이 패키지에 포함된 에셋 수 (assets.jsonl row 중 package_id 일치 개수)."
+    },
+    "type_breakdown": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0},
+      "description": "타입별 카운트. 예: {\"Prefab\": 42, \"Material\": 28, \"Texture\": 17}"
+    },
+    "llm_purpose": {
+      "type": "string",
+      "description": "asset-tagger 집계가 추론한 패키지의 주된 용도 (한글 한 줄)."
+    },
+    "llm_categories": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "패키지에 속한 에셋들의 대표 카테고리 (kebab-case). 예: [\"medieval\", \"environment\", \"exterior\", \"modular-architecture\"]"
+    }
+  }
+}

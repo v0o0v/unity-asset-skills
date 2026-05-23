@@ -1,0 +1,31 @@
+# unity-asset-skills 프로젝트 로컬 설정 — 기준 기본값 (v0.1.0)
+# 이 파일을 대상 Unity 프로젝트 루트의 `.claude/unity-assets.yml`로 복사하여 사용한다.
+# 모든 키는 plan v6 / 명세서 256~267행 기본값과 일치한다.
+# 키 이름 변경 금지. 값만 프로젝트별로 조정한다.
+
+# 인덱스 스키마 단계: minimal | normal | rich
+# minimal = 7 필드 (guid, path, name, type, labels, llm_tags, llm_summary)
+# normal  = minimal + 5 (size, dependencies, package_id, last_modified, llm_use_cases)
+# rich    = normal + 타입-discriminated extras (Prefab.component_types 등)
+index_depth: minimal
+
+# Orchestrator confidence 게이트
+confidence_threshold:
+  auto: 0.70     # max(confidence) >= auto  → 자동 적용
+  confirm: 0.40  # max(confidence) >= confirm → 사용자 확인
+  # < confirm                                → reject
+
+# Indexer subagent fan-out 파라미터
+batch_size: 20            # subagent 당 처리 에셋 수
+parallel_subagents: 10    # 동시 띄울 subagent 수
+# → 한 wave 최대 batch_size * parallel_subagents = 200 에셋
+
+# Search 컨텍스트 윈도우 캡
+max_assets_in_context: 500  # Search 단일 호출이 컨텍스트에 받아들이는 최대 row 수
+
+# 인덱스 제외 경로 (Indexer가 무시할 디렉터리)
+ignore_paths:
+  - "Assets/Plugins/Editor"
+
+# 안전 모드 (V1에서는 loose만 의미 있음 — 사용자 책임 원칙)
+safety_mode: loose

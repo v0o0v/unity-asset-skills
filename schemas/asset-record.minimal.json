@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/asset-record.minimal.json",
+  "title": "Asset Record — minimal",
+  "description": "Unity 에셋 한 개의 shallow 메타데이터. minimal tier는 7 필드. assets.jsonl의 한 줄에 해당한다.",
+  "type": "object",
+  "required": [
+    "guid",
+    "path",
+    "name",
+    "type",
+    "labels",
+    "llm_tags",
+    "llm_summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "guid": {
+      "type": "string",
+      "description": "Unity asset GUID. .meta 파일의 guid 필드."
+    },
+    "path": {
+      "type": "string",
+      "description": "프로젝트 루트 기준 상대 경로. 예: Assets/Packages/MedievalVillage/Prefabs/Wall_01.prefab"
+    },
+    "name": {
+      "type": "string",
+      "description": "에셋 표시 이름 (확장자 제외 파일 stem)."
+    },
+    "type": {
+      "type": "string",
+      "description": "Unity 에셋 타입. 예: Prefab, Material, Texture, AnimatorController, ScriptableObject, MonoScript."
+    },
+    "labels": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Unity AssetLabels (.meta의 labels 필드 또는 빈 배열)."
+    },
+    "llm_tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "asset-tagger subagent가 생성한 의미 태그 (kebab-case). 예: medieval, village, exterior, stone-wall."
+    },
+    "llm_summary": {
+      "type": "string",
+      "description": "asset-tagger subagent가 생성한 한 줄 요약 (한글). 검색 매칭에 사용된다."
+    }
+  }
+}

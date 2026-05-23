@@ -1,0 +1,27 @@
+{
+  "name": "unity-assets",
+  "version": "0.1.0",
+  "description": "Unity 에셋 인지형 Claude Code 스킬 세트 — 2-layer 인덱스, LLM-as-Search, confidence-gated Orchestrator, 4개 슬래시 커맨드 (/unity-assets:index, :search, :build, :doctor).",
+  "author": {
+    "name": "unity-asset-skills contributors"
+  },
+  "repository": "https://github.com/v0o0v/unity-asset-skills",
+  "homepage": "https://github.com/v0o0v/unity-asset-skills",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "unity",
+    "asset",
+    "indexer",
+    "search",
+    "llm-as-search",
+    "mcp-for-unity"
+  ],
+  "skills": [
+    "./skills/unity-assets-index/",
+    "./skills/unity-assets-search/",
+    "./skills/unity-assets-build/",
+    "./skills/unity-assets-doctor/"
+  ]
+}

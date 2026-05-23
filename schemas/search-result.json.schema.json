@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/search-result.json.schema.json",
+  "title": "Search Result Handoff",
+  "description": "Search → Orchestrator 핸드오프 파일 스키마. Search가 .claude/unity-asset-index/search-result.json으로 atomic 작성하고 Orchestrator가 읽는다. manifest_version은 manifest.json::version 그대로 복사 (핸드셰이크). reasoning은 풀-피델리티 (요약·절단 금지, no maxLength).",
+  "type": "object",
+  "required": ["manifest_version", "groups"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+$",
+      "description": "Search 실행 시점 인덱스 버전. Orchestrator는 manifest.json::version과 비교하여 불일치 시 'stale_search' 사유로 거부."
+    },
+    "groups": {
+      "type": "array",
+      "description": "sub-intent 별 후보 그룹. Search 1차 라우팅의 sub_intents와 1:1 대응.",
+      "items": {
+        "type": "object",
+        "required": ["sub_intent", "candidates"],
+        "additionalProperties": false,
+        "properties": {
+          "sub_intent": {
+            "type": "string",
+            "description": "search-routing.json의 sub_intents[i].intent와 동일."
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["guid", "path", "confidence", "reasoning"],
+              "additionalProperties": false,
+              "properties": {
+                "guid": {"type": "string"},
+                "path": {"type": "string"},
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "0.0~1.0. Orchestrator 게이트: auto>=0.70 / confirm>=0.40 / reject<0.40."
+                },
+                "reasoning": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "이 후보가 적합하다고 판단한 LLM의 추론 (한글). 풀-피델리티 — 요약·절단 금지, maxLength 없음."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

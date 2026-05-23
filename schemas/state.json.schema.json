@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "unity-asset-skills/state.json.schema.json",
+  "title": "Indexer State",
+  "description": "state.json — Indexer의 wave 진행·재개·증분 갱신 상태. R1 in_progress_run + completed_batches 필드는 크래시 복구 의미론을 구동한다 (CONVENTION.md '파일 atomic 계약' + plan Step 2 참조).",
+  "type": "object",
+  "required": [
+    "last_run",
+    "version",
+    "guid_signatures",
+    "pending_batches",
+    "bad_rows",
+    "in_progress_run",
+    "completed_batches"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "last_run": {
+      "type": "string",
+      "format": "date-time",
+      "description": "마지막 인덱스 실행 시점 (ISO-8601). search-result.json의 mtime 비교에도 사용."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+$",
+      "description": "manifest.json::version과 동일한 인덱스 버전. manifest_version 핸드셰이크의 기준값."
+    },
+    "guid_signatures": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "GUID → 파일 시그니처 (mtime + size 해시) 매핑. 증분 갱신 시 변경 셋 산출에 사용."
+    },
+    "pending_batches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["batch_id", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "batch_id": {"type": "string"},
+          "reason": {
+            "type": "string",
+            "description": "subagent_timeout | subagent_error | bad_output | manual_retry 중 하나."
+          }
+        }
+      },
+      "description": "재시도 대기 중인 실패 batch. 다음 /unity-assets:index 실행이 가져간다."
+    },
+    "bad_rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["guid", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "guid": {"type": "string"},
+          "reason": {"type": "string"}
+        }
+      },
+      "description": "subagent가 malformed JSON으로 응답한 row. 재시도 batch로 라우팅."
+    },
+    "in_progress_run": {
+      "type": "boolean",
+      "default": false,
+      "description": "R1: 첫 wave 시작 시 true, assets.jsonl atomic rename 완료 후 false. .partial 파일이 orphan인지 live인지 구분한다."
+    },
+    "completed_batches": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "R1: 이미 assets.jsonl.partial에 행이 들어간 batch_id 목록. 크래시 복구 시 중복 실행 회피용."
+    }
+  }
+}

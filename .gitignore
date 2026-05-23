@@ -1,0 +1,27 @@
+# OMC 세션 산출물 — docs/planning/에 정리된 스냅샷을 커밋 (이쪽은 로컬 working iteration 공간)
+.omc/
+
+# CRIT 테스트 실행 결과
+tests/_last-run.json
+tests/fixtures/unity-50/Assets/
+tests/fixtures/unity-200/Assets/
+tests/fixtures/unity-1200/Assets/
+tests/fixtures/unity-50/.claude/
+tests/fixtures/unity-200/.claude/
+tests/fixtures/unity-1200/.claude/
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
+
+# Python (lint 스크립트가 가끔 사용)
+__pycache__/
+*.pyc
+
+# Claude Code 세션 캐시 (있다면)
+.claude/cache/
