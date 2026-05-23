@@ -95,7 +95,7 @@ doctor는 read-only — 어떤 파일도 수정·생성·삭제하지 않는다.
 | `/unity-assets:build "..."` | search-result.json 기반 confidence-gated Orchestrator. 신선한 search-result.json 없으면 자동 Search 호출 (R3 안내). 씬/프리팹/스크립트 생성까지 자동, 파괴적 작업 금지. | scene 변경 + `orchestrator-audit.jsonl` append |
 | `/unity-assets:doctor` | 4개 의존성 read-only 헬스체크 (Unity Editor, unity-mcp-skill, .claude/ 구조, unity-assets.yml). | stdout 4행 ✓/✗ + 종료 코드 |
 
-자세한 호출 흐름·계약은 [CONVENTION.md](./CONVENTION.md), 내부 개발자 가이드는 [AGENTS.md](./AGENTS.md).
+자세한 호출 흐름·계약은 [CONVENTION.md](./CONVENTION.md), 내부 개발자 가이드는 [AGENTS.md](./AGENTS.md), 플러그인을 실제 Unity 프로젝트에서 시험하며 동시에 개발하는 워크플로는 [docs/dev-loop.md](./docs/dev-loop.md).
 
 ---
 

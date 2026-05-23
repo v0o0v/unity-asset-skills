@@ -1,6 +1,12 @@
 # OMC 세션 산출물 — docs/planning/에 정리된 스냅샷을 커밋 (이쪽은 로컬 working iteration 공간)
 .omc/
 
+# Dev loop 진단 스냅샷 (개인 머신 testbed의 .claude/ 산출물 복사본)
+.omc/diagnosis/
+
+# Window B가 read_console로 덤프한 Unity console log
+tests/integration/testbed/.claude/_debug/
+
 # CRIT 테스트 실행 결과
 tests/_last-run.json
 tests/fixtures/unity-50/Assets/
