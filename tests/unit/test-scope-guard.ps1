@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-ORC3 Scope guard — orchestrator-audit.jsonl을 스캔하여 금지 튜플 0건 단언.

@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-IDX1 Coverage — 테스트 Unity 프로젝트의 .meta가 있는 모든 자산이 100% 인덱스에 포함됨을 검증.

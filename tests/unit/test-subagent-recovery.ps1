@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-IDX4 Subagent failure + R1 크래시 복구 — 두 가지 경로 모두 검증.
@@ -94,8 +94,9 @@ Write-Host "    PASS (a): $finalCount / $($assetPaths.Count) rows (누락 없음
 # ====================================================
 Write-Host "  (b) 크래시 복구 시나리오"
 
-# 다시 fixture rebuild
+# 다시 fixture rebuild — builder의 -Force 가 .claude/unity-asset-index/ 디렉터리도 정리하므로 재생성.
 & (Join-Path $testsRoot 'fixtures/_builder.ps1') -Target 'unity-200' -Force | Out-Null
+if (-not (Test-Path $indexDir)) { New-Item -ItemType Directory -Path $indexDir -Force | Out-Null }
 Remove-Item (Join-Path $indexDir 'assets.jsonl') -Force -ErrorAction SilentlyContinue
 
 # 시뮬레이션: 첫 wave 중 일부만 .partial에 들어간 상태로 크래시

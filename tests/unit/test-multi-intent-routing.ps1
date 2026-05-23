@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-ORC1 라우팅 정확도 (R2 복합 임계치) — golden-queries.yml의 orc1_routing 10개 (6 multi + 4 single).

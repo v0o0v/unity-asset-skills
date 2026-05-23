@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-SCH2 Drill-down 자동 전환 — 2000+ 에셋에서 map-reduce 분기가 활성되어

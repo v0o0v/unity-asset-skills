@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-CNV2 Plugin manifest — .claude-plugin/plugin.json이 Claude Code 공식 plugin manifest 스펙 통과.
@@ -17,7 +17,9 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-$pluginRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$testsRoot = Split-Path $PSScriptRoot -Parent
+. (Join-Path $testsRoot 'fixtures/_stubs.ps1')
+$pluginRoot = Split-Path $testsRoot -Parent
 
 # 위치 검증
 $canonical = Join-Path $pluginRoot '.claude-plugin/plugin.json'

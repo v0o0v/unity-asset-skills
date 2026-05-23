@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-SCH3 Malformed query graceful — 빈 쿼리·한글-only·이모티콘·따옴표 미스매치에서

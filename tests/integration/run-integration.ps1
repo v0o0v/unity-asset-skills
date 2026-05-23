@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   실제 Unity 프로젝트 (tests/integration/testbed) 위에서 unity-asset-skills 슬래시 커맨드

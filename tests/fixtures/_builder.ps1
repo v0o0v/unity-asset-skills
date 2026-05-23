@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   Unity fixture builder — _templates/assets.yml을 읽어 unity-50/200/1200 fixture를 deterministic하게 생성.

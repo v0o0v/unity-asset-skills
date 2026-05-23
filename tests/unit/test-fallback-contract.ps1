@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-SCH4 Indexer fallback 계약 — 인덱스 부재 또는 stale일 때 명시적 경고 + 두 옵션 (reindex 수동/자동) 제시.

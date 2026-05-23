@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-CNV3 Cross-skill 계약 — :index가 쓰는 파일을 :search와 :build가 에러 없이 읽음.
@@ -61,7 +61,8 @@ $manifestRead = Get-Content (Join-Path $indexDir 'manifest.json') | Out-String |
 
 Assert-True -Condition ($assetsRead.Count -gt 0) -Message ":search가 assets.jsonl을 못 읽음"
 Assert-True -Condition ($packagesRead.Count -gt 0) -Message ":search가 packages.jsonl을 못 읽음"
-Assert-True -Condition ($manifestRead.version) -Message ":search가 manifest.json을 못 읽음"
+# PS strict type binding 가드 — 문자열 → bool 자동 변환 실패하므로 명시적 null 비교.
+Assert-True -Condition ($null -ne $manifestRead.version) -Message ":search가 manifest.json을 못 읽음"
 Write-Host "  :search 읽기 성공: assets=$($assetsRead.Count), packages=$($packagesRead.Count), version=$($manifestRead.version)"
 
 # Step 3 — :search가 search-result.json 작성 (manifest_version 동기)
@@ -78,7 +79,7 @@ New-StubSearchResult -ManifestVersion $manifestRead.version -Groups $groups -Out
 # Step 4 — :build가 search-result.json 읽음 + manifest_version 핸드셰이크
 $srRead = Get-Content (Join-Path $indexDir 'search-result.json') | Out-String | ConvertFrom-Json
 Assert-Equal -Expected $manifestRead.version -Actual $srRead.manifest_version -Message ":build manifest_version 핸드셰이크 실패 (stale_search)"
-Assert-True -Condition ($srRead.groups.Count -gt 0) -Message ":build가 groups를 못 읽음"
+Assert-True -Condition ([int]$srRead.groups.Count -gt 0) -Message ":build가 groups를 못 읽음"
 Write-Host "  :build 읽기 성공: search-result.json manifest_version=$($srRead.manifest_version) (일치)"
 
 Write-Host "  PASS CRIT-CNV3 Cross-skill 계약: :index → :search → :build 모든 핸드오프 정상"

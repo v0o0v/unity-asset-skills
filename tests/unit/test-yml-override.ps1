@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-CNV4 unity-assets.yml override — non-default 값으로 변형한 yml이 런타임에 실제로 관측됨을 검증.
@@ -45,7 +45,8 @@ function Read-YamlSimple {
     param([string] $Path)
     $config = @{ confidence_threshold = @{} }
     $section = $null
-    foreach ($line in Get-Content $Path) {
+    # PS5.1 기본 인코딩(CP949)이 UTF-8 한글을 깨뜨려 라인이 병합되는 문제 가드 — 명시적 UTF8 지정.
+    foreach ($line in (Get-Content $Path -Encoding UTF8)) {
         $t = $line -replace '#.*$',''
         $t = $t.TrimEnd()
         if (-not $t) { continue }

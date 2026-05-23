@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-IDX2 Idempotency — 변경되지 않은 프로젝트의 두 번째 인덱스 실행이 no-op 경로로 들어가

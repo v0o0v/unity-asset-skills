@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-ORC2 Confidence gate — hi/med/lo confidence 3개 캐닝 search-result.json에서

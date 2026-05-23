@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-EE1 End-to-end — 자연어 요청 "탑다운 좀비 survival 게임 프로토타입 만들어줘" 한 줄로,

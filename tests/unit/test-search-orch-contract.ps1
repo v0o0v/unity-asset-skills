@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-ORC4 Search → Orch 계약 — search-result.json이 schemas/search-result.json.schema.json을 준수하고
@@ -40,8 +40,9 @@ New-StubSearchResult -ManifestVersion 'v0.1' -Groups $groups -OutPath $srPath
 # Python으로 스키마 검증 (간단 — 필수 필드 + 타입 + regex)
 $validatorScript = @'
 import json, sys, re
-sr = json.load(open(sys.argv[1], encoding='utf-8'))
-schema = json.load(open(sys.argv[2], encoding='utf-8'))
+# PS5.1 Set-Content -Encoding utf8 이 BOM을 붙이므로 utf-8-sig 사용.
+sr = json.load(open(sys.argv[1], encoding='utf-8-sig'))
+schema = json.load(open(sys.argv[2], encoding='utf-8-sig'))
 
 # manifest_version: required, regex
 mv = sr.get('manifest_version')

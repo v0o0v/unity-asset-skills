@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   unity-mcp 및 asset-tagger subagent stub 헬퍼. 모든 CRIT 테스트가 dot-source로 가져온다.
@@ -159,4 +159,8 @@ function Assert-Equal {
     }
 }
 
-Export-ModuleMember -Function * -ErrorAction SilentlyContinue
+# Export-ModuleMember는 모듈 컨텍스트(.psm1 또는 Import-Module)에서만 호출 가능.
+# `. ./_stubs.ps1`로 dot-source되는 경우 PS는 PermissionDenied 예외를 던지므로 가드 필수.
+if ($MyInvocation.MyCommand.ScriptBlock.Module) {
+    Export-ModuleMember -Function *
+}

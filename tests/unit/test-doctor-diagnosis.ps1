@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-DOC1 Doctor 진단 정확도 — 4개 의존성 fault-injection fixture에서 정확히 망가뜨린 항목만 ✗,
@@ -79,7 +79,8 @@ foreach ($c in $cases) {
     foreach ($l in $r.lines) { Write-Host "    $l" }
 
     # 검증 1: broken 항목만 ✗
-    $brokenLines = $r.lines | Where-Object { $_ -match '^✗' }
+    # PS5.1 array-collapse 가드 — single-element pipeline은 scalar로 떨어져 $brokenLines[0]이 첫 문자만 반환.
+    [array] $brokenLines = $r.lines | Where-Object { $_ -match '^✗' }
     if ($c.broken) {
         if ($brokenLines.Count -ne 1) {
             Write-Host "    FAIL: ✗ 라인이 정확히 1개여야 함 (got $($brokenLines.Count))" -ForegroundColor Red

@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   CRIT-IDX3 Incremental accuracy — K개 파일을 수정하면 정확히 K개 row만 byte 변화, 나머지는 0.
