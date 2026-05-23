@@ -10,6 +10,20 @@ tests/fixtures/unity-50/.claude/
 tests/fixtures/unity-200/.claude/
 tests/fixtures/unity-1200/.claude/
 
+# Integration test — 실제 Unity 프로젝트 (사용자 머신에서 직접 셋업)
+tests/integration/testbed/
+tests/integration/_last-run.json
+
+# Unity 일반 캐시 (testbed/ 외 위치에서 Unity 사용 시에도 안전망)
+**/Library/
+**/Temp/
+**/Logs/
+**/UserSettings/
+**/obj/
+**/*.csproj
+**/*.sln
+**/*.unityproj
+
 # OS / 에디터
 .DS_Store
 Thumbs.db
