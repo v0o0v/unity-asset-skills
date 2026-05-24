@@ -139,7 +139,7 @@ Task(
 1. `packages.jsonl`을 모두 읽음 (보통 수십~수백 개로 컨텍스트 friendly).
 2. subagent에게 `packages.jsonl` rows + sub-intent + `category_hint` 전달, top-K (보통 K=3~5) 패키지 선택 + 각 패키지의 `confidence` (0~1) 출력 요청.
 3. 선택된 패키지의 `package_id`에 해당하는 `assets.jsonl` rows만 읽음. row 수가 `max_assets_in_context` 초과면 5.2로 fallback.
-4. subagent에게 해당 rows + sub-intent + (있다면) `subtype_hint` 전달, 후보 에셋들의 `{guid, path, confidence (0..1), reasoning (한글 풀-피델리티)}` 출력 요청.
+4. subagent에게 해당 rows + sub-intent + (있다면) `subtype_hint` 전달, 후보 에셋들의 `{guid, path, confidence (0..1), reasoning (영어 풀-피델리티)}` 출력 요청. reasoning은 영어 한 문장 이상.
 
    **subtype 필터 (CRIT-SCH6):** `subtype_hint`가 sub-intent에 주어진 경우 subagent instructions에 다음을 추가한다:
    - `type_subtype`이 `subtype_hint`와 정확히 일치하는 후보만 우선 고려한다.
@@ -209,7 +209,7 @@ Step 5.1 또는 5.2 완료 후 모든 sub-intent의 candidates 중 max confidenc
     {
       "sub_intent": "<라우팅 출력의 intent와 동일>",
       "candidates": [
-        {"guid": "...", "path": "...", "confidence": 0.83, "reasoning": "<한글 풀-피델리티>"},
+        {"guid": "...", "path": "...", "confidence": 0.83, "reasoning": "<영어 풀-피델리티>"},
         ...
       ]
     },

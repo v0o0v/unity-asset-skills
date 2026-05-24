@@ -1,7 +1,7 @@
 {
   "name": "unity-assets",
   "version": "0.1.0",
-  "description": "Unity 에셋 인지형 Claude Code 스킬 세트 — 2-layer 인덱스, LLM-as-Search, confidence-gated Orchestrator, 5개 슬래시 커맨드 (/unity-assets:index, :search, :pick, :build, :doctor).",
+  "description": "Unity 에셋 인지형 Claude Code 스킬 세트 — 2-layer 인덱스, LLM-as-Search, confidence-gated Orchestrator, 6개 슬래시 커맨드 (/unity-assets:index, :reindex, :search, :pick, :build, :doctor).",
   "author": {
     "name": "unity-asset-skills contributors"
   },
@@ -20,6 +20,7 @@
   ],
   "skills": [
     "./skills/unity-assets-index/",
+    "./skills/unity-assets-reindex/",
     "./skills/unity-assets-search/",
     "./skills/unity-assets-pick/",
     "./skills/unity-assets-build/",

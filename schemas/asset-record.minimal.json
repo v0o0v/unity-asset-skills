@@ -43,7 +43,7 @@
     },
     "llm_summary": {
       "type": "string",
-      "description": "asset-tagger subagent가 생성한 한 줄 요약 (한글). 검색 매칭에 사용된다."
+      "description": "asset-tagger subagent가 생성한 한 줄 요약 (영어). 검색 매칭에 사용된다."
     },
     "filename_signals": {
       "type": "array",

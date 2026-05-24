@@ -26,7 +26,7 @@
     "type": {"type": "string", "description": "Unity 에셋 타입."},
     "labels": {"type": "array", "items": {"type": "string"}, "description": "Unity AssetLabels."},
     "llm_tags": {"type": "array", "items": {"type": "string"}, "description": "asset-tagger 의미 태그."},
-    "llm_summary": {"type": "string", "description": "asset-tagger 한 줄 요약 (한글)."},
+    "llm_summary": {"type": "string", "description": "asset-tagger 한 줄 요약 (영어)."},
     "size": {
       "type": "integer",
       "minimum": 0,
@@ -49,7 +49,7 @@
     "llm_use_cases": {
       "type": "array",
       "items": {"type": "string"},
-      "description": "asset-tagger가 추론한 대표 사용 케이스 (한글 문장)."
+      "description": "asset-tagger가 추론한 대표 사용 케이스 (영어 문장)."
     }
   }
 }

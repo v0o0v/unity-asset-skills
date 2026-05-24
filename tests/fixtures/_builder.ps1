@@ -203,9 +203,9 @@ ${importer}:
 if ($Synthetic) {
     # 자동 생성: 단일 패키지 안에 SynthAsset_NNNN.prefab/mat/png 사이클
     $kinds = @(
-        @{ kind='Prefab';   ext='.prefab'; tags_hint=@('synth','prefab','test'); summary_hint='합성 프리팹 stub.' },
-        @{ kind='Material'; ext='.mat';    tags_hint=@('synth','material','test'); summary_hint='합성 머티리얼 stub.' },
-        @{ kind='Texture';  ext='.png';    tags_hint=@('synth','texture','test'); summary_hint='합성 텍스처 stub.' }
+        @{ kind='Prefab';   ext='.prefab'; tags_hint=@('synth','prefab','test'); summary_hint='Synthetic prefab stub.' },
+        @{ kind='Material'; ext='.mat';    tags_hint=@('synth','material','test'); summary_hint='Synthetic material stub.' },
+        @{ kind='Texture';  ext='.png';    tags_hint=@('synth','texture','test'); summary_hint='Synthetic texture stub.' }
     )
     for ($i = 1; $i -le $Size; $i++) {
         $k = $kinds[($i - 1) % $kinds.Count]
