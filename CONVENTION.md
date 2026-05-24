@@ -120,6 +120,28 @@ Append-only. 한 줄 = 한 unity-mcp 호출 audit. atomic append를 보장하기
 - **위치**: `<unity-project>/.claude/unity-asset-index/feedback.jsonl` (per-project).
 - **스키마**: `schemas/feedback-row.json.schema.json` 필수 8 필드 (`ts, query, sub_intent_id, picked_guid, candidate_guids, confidence_before, confidence_after, source`).
 
+### 2.6 비공식 임시 파일 금지
+
+§1 산출 5종(`manifest.json`, `packages.jsonl`, `assets.jsonl`, `assets.jsonl.partial`, `state.json`) 및 §2.5의 `feedback.jsonl`·`feedback.jsonl.lock` 외에 어떤 임시 파일도 `.claude/unity-asset-index/` 하위에 만들지 않는다. 다음 두 가지 우회 패턴이 특히 금지된다:
+
+1. **변경 셋 dump 우회** — `_tmp/meta-list.json` 등 `.meta` Glob 결과를 디스크에 단일 JSON으로 저장하는 패턴. §2.4의 R1 복구 분기가 인식하지 않아 stale orphan이 되며, 자기가 쓴 파일을 Read 한도(25k tokens) 초과로 못 읽는 함정을 유발한다.
+2. **자동화 스크립트 우회** — `setup-batches.ps1`, `_tmp/batches/batch-NNN.txt` 등 PowerShell/Bash 스크립트로 batch fan-out을 디스크 staging으로 처리하려는 패턴. 권한 prompt에서 막히거나 사용자 환경에서 실행 실패하여 silent stall을 유발한다. subagent fan-out은 반드시 `Task()` 도구 호출로만 수행한다 (`skills/unity-assets-index/SKILL.md` Step 4).
+
+두 패턴 모두 본 SKILL을 실행하는 LLM이 작업 회피(Task 호출 횟수를 줄이려는 시도)로 도입하는 경향이 있다. 변경 셋 계산은 메모리에서, 부담스러운 규모면 chunked Glob으로 분할 처리한다 (`skills/unity-assets-index/SKILL.md` Step 2). 
+
+검사·자가 복구는 다음과 같이 분담한다:
+- `skills/unity-assets-index/SKILL.md` Step 1.5 — 본 SKILL 실행 시작에서 `_tmp/` 1회 폐기 (자가 복구).
+- `skills/unity-assets-doctor/SKILL.md` 검사 6 — read-only 사후 감지 (보고만, 폐기는 사용자 위임).
+- `skills/unity-assets-index/SKILL.md` § 종료 신호 출력 계약 — 모든 종료에 stdout 1줄 emit하여 silent stall을 미연에 차단 (자가 우회 시도 시 `error: bypass_attempted at Step <N>` emit 후 self-abort).
+
+**예외 — V0.1.0+3 indexer-helper.ps1**: `skills/unity-assets-index/lib/indexer-helper.ps1`은 SKILL.md(index)가 명시 호출하는 deterministic PowerShell helper다. 본 helper가 작성하는 `<unity-project>/.claude/unity-asset-index/_batches/batch-NNN.txt`는 §2.6 금지 대상에서 제외된다 — LLM 자가 우회가 아니라 SKILL.md 절차의 일부이며 helper는 LLM thinking 없이 deterministic 분기로 동작한다. probe 측정 결과 사용자 reindex의 진짜 병목은 (a) LLM의 batch 분할 부담, (b) wall-clock 자가 추정(fictitious), (c) Task() 직렬 발행이었으며, helper가 (a)와 (b)를 deterministic으로 제거한다.
+
+- **호출 주체**: SKILL.md(index) Step 2 (`GetMetaList`), Step 3 (`PlanBatches`), Step 4.0/4.0.1 (`InitWaveTiming`/`CompleteWaveTiming`/`NowIso`), Step 5 (`Finalize`/`CleanupBatches`).
+- **산출 위치**: `<unity-project>/.claude/unity-asset-index/_batches/batch-NNN.txt` (per-batch input spec, deterministic).
+- **자가 폐기**: helper의 `PlanBatches`는 호출마다 기존 `_batches/batch-*.txt`를 자동 폐기 후 재작성. SKILL.md(index) Step 5 Finalize 직후 `CleanupBatches`로 폐기.
+- **자가 검출 게이트(Step 1.6) 화이트리스트**에 `_batches/batch-*.txt` 경로와 `indexer-helper.ps1` PowerShell 호출이 추가된다.
+- **helper 외 다른 코드가 `_batches/`에 쓰는 것은 여전히 금지** (LLM이 helper를 우회하여 직접 batch.txt를 작성하면 §2.6 위반).
+
 ---
 
 ## 3. schema-doc-sync 계약 (CRIT-CNV1)
@@ -218,7 +240,7 @@ Wave 1까지 24개 + Wave 2 신규 5개 = suite 총 29개 항목. `pwsh tests/ru
     },
     "llm_summary": {
       "type": "string",
-      "description": "asset-tagger subagent가 생성한 한 줄 요약 (한글). 검색 매칭에 사용된다."
+      "description": "asset-tagger subagent가 생성한 한 줄 요약 (영어). 검색 매칭에 사용된다."
     },
     "filename_signals": {
       "type": "array",
@@ -265,7 +287,7 @@ Wave 1까지 24개 + Wave 2 신규 5개 = suite 총 29개 항목. `pwsh tests/ru
     "type": {"type": "string", "description": "Unity 에셋 타입."},
     "labels": {"type": "array", "items": {"type": "string"}, "description": "Unity AssetLabels."},
     "llm_tags": {"type": "array", "items": {"type": "string"}, "description": "asset-tagger 의미 태그."},
-    "llm_summary": {"type": "string", "description": "asset-tagger 한 줄 요약 (한글)."},
+    "llm_summary": {"type": "string", "description": "asset-tagger 한 줄 요약 (영어)."},
     "size": {
       "type": "integer",
       "minimum": 0,
@@ -288,7 +310,7 @@ Wave 1까지 24개 + Wave 2 신규 5개 = suite 총 29개 항목. `pwsh tests/ru
     "llm_use_cases": {
       "type": "array",
       "items": {"type": "string"},
-      "description": "asset-tagger가 추론한 대표 사용 케이스 (한글 문장)."
+      "description": "asset-tagger가 추론한 대표 사용 케이스 (영어 문장)."
     }
   }
 }
@@ -383,7 +405,7 @@ Wave 1까지 24개 + Wave 2 신규 5개 = suite 총 29개 항목. `pwsh tests/ru
 | `index_depth` | enum | `minimal` | `minimal` / `normal` / `rich` 중 하나. 스키마 tier 선택. |
 | `confidence_threshold.auto` | number 0..1 | `0.70` | `max(confidence) >= auto` → Orchestrator 자동 적용. |
 | `confidence_threshold.confirm` | number 0..1 | `0.40` | `max(confidence) >= confirm` → 사용자 확인 분기. |
-| `batch_size` | integer | `20` | asset-tagger subagent 한 개가 받는 에셋 수. |
+| `batch_size` | integer | `20` | asset-tagger subagent 한 개가 받는 에셋 수. V0.1.0+1에서 20→50 상향 후 V0.1.0+2에서 20으로 원복 (probe 결과 50은 fallback general-purpose subagent의 200K context cap에 4/10 batch "Prompt too long" 실패 + 일부 fictitious row 발생). 20은 안전 한계. plugin-defined `unity-assets:asset-tagger` 사용 시 더 크게 가능. |
 | `parallel_subagents` | integer | `10` | 한 wave에 동시 띄울 subagent 수. |
 | `max_assets_in_context` | integer | `500` | Search 단일 호출이 컨텍스트에 받아들이는 최대 row 수. |
 | `ignore_paths` | string[] | `["Assets/Plugins/Editor"]` | Indexer가 스킵할 디렉터리 prefix. |
@@ -398,7 +420,7 @@ Wave 1까지 24개 + Wave 2 신규 5개 = suite 총 29개 항목. `pwsh tests/ru
 | `manifest.json` | `:index` | `:index`, `:search`, `:build`, `:doctor` | `{version, last_run, schema_tier}`. version은 `^v\d+\.\d+$` regex. |
 | `packages.jsonl` | `:index` (파생) | `:search` | package-first drill-down 1단계 입력. |
 | `assets.jsonl` | `:index` | `:search` | tier에 따라 schemas/asset-record.<tier>.json 준수. |
-| `state.json` | `:index` | `:index`, `:search` (mtime/version 비교) | R1 in_progress_run / completed_batches 포함. |
+| `state.json` | `:index`, `:reindex` | `:index`, `:reindex`, `:search` (mtime/version 비교) | R1 `in_progress_run` / `completed_batches` + 진단 인프라 `wave_timings` 배열 + 자가 검출 게이트 위반 시 `last_error` (CONVENTION.md §2.6, SKILL.md(index) Step 1.6) 포함. `wave_timings[*]` 스키마: `{wave, total_waves, subagents_dispatched, start, end, elapsed_sec, ok_rows, bad_rows, timeout_batches[]}`. 사용자가 사후 wave 단위 시간/병렬도 진단 가능. |
 | `search-result.json` | `:search` | `:build` | manifest_version 필드 (regex `^v\d+\.\d+$`) 포함. |
 | `orchestrator-audit.jsonl` | `:build` (append) | `:build` post-run 검증, `tests/unit/test-scope-guard.ps1` | append-only, 한 줄당 한 호출. |
 | `feedback.jsonl` | `:pick` (append) | `:search` Step 4.0.5 (Past picks hint), `:doctor` 검사 5 | append-only, 락 + Add-Content. 행 스키마 `schemas/feedback-row.json.schema.json`. §2.5 예외 규약. Wave 2 신규. |

@@ -6,15 +6,16 @@
 
 ## 1. 개요
 
-`unity-asset-skills`는 Unity 프로젝트의 기설치 에셋을 Claude Code 세션 안에서 인덱싱하고 자연어로 검색·조립하는 글로벌 Claude Code 플러그인이다. **5개 슬래시 커맨드** (Wave 2에서 `:pick`을 별도 스킬로 분리)를 제공한다.
+`unity-asset-skills`는 Unity 프로젝트의 기설치 에셋을 Claude Code 세션 안에서 인덱싱하고 자연어로 검색·조립하는 글로벌 Claude Code 플러그인이다. **6개 슬래시 커맨드** (Wave 2에서 `:pick`을 별도 스킬로 분리, 후속에서 `:reindex`를 alias 스킬로 분리)를 제공한다.
 
 | 커맨드 | 역할 |
 |--------|------|
-| `/unity-assets:index` (alias `:reindex`) | 2-layer (package + asset) 인덱싱. asset-tagger subagent fan-out. |
+| `/unity-assets:index` | 증분 인덱싱. `state.json::guid_signatures` 비교로 변경 셋만 재태깅. asset-tagger subagent fan-out. |
+| `/unity-assets:reindex` | 강제 full 재인덱싱. `state.json` 무시, 모든 `.meta` 재태깅. index와 동일 절차 + Step 2 force 분기 (alias 스킬). |
 | `/unity-assets:search` | LLM-as-Search dual-call (라우팅 → sub-intent별 retrieval). Wave 2 Step 4.0.5 "Past picks hint" 활용. |
 | `/unity-assets:pick <row-index>` (Wave 2 신규) | Search 결과 1개 선택, `feedback.jsonl`에 한 줄 append. 학습 데이터 누적. |
 | `/unity-assets:build` | Confidence-gated Orchestrator. R3 preflight + 이중 scope enforcement. |
-| `/unity-assets:doctor` | 5개 의존성 read-only 헬스체크 (Wave 2에서 feedback.jsonl 행 스키마 검사 추가). |
+| `/unity-assets:doctor` | 6개 항목 read-only 헬스체크 (Wave 2에서 feedback.jsonl 행 스키마 검사 추가, 후속에서 stale `_tmp/` 감지 검사 6 추가). |
 
 ---
 

@@ -34,7 +34,7 @@
     },
     "llm_purpose": {
       "type": "string",
-      "description": "asset-tagger 집계가 추론한 패키지의 주된 용도 (한글 한 줄)."
+      "description": "asset-tagger 집계가 추론한 패키지의 주된 용도 (영어 한 줄)."
     },
     "llm_categories": {
       "type": "array",

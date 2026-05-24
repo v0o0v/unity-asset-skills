@@ -52,7 +52,7 @@
                 "reasoning": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "이 후보가 적합하다고 판단한 LLM의 추론 (한글). 풀-피델리티 — 요약·절단 금지, maxLength 없음."
+                  "description": "이 후보가 적합하다고 판단한 LLM의 추론 (영어). 풀-피델리티 — 요약·절단 금지, maxLength 없음. Orchestrator UX(사용자 확인 분기)에서 필요시 한국어 paraphrase를 보조 표시할 수 있으나 본 필드 자체는 영어로 직렬화한다."
                 }
               }
             }

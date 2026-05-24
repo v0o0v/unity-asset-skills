@@ -2,7 +2,7 @@
 
 Unity 에셋 인지형 Claude Code 플러그인. 자연어 한 줄로 프로젝트의 이미 설치된 에셋을 검색하고, 씬·프리팹·ScriptableObject·스크립트 생성까지 자동화한다.
 
-- **5개 슬래시 커맨드**: `/unity-assets:index`, `/unity-assets:search`, `/unity-assets:pick`, `/unity-assets:build`, `/unity-assets:doctor`
+- **6개 슬래시 커맨드**: `/unity-assets:index`, `/unity-assets:reindex`, `/unity-assets:search`, `/unity-assets:pick`, `/unity-assets:build`, `/unity-assets:doctor`
 - **외부 API 0**: 모든 의미 분석은 Claude Code 세션 내부 batch subagent. 별도 API 키 불필요.
 - **인프라 0**: embedding·벡터 DB 없음. LLM-as-Search.
 - **지원 플랫폼**: V1은 **Windows 전용**. macOS / Linux는 V1 범위 외.
@@ -87,15 +87,16 @@ doctor는 read-only — 어떤 파일도 수정·생성·삭제하지 않는다.
 
 ---
 
-## 5개 슬래시 커맨드
+## 6개 슬래시 커맨드
 
 | 커맨드 | 책임 | 산출 파일 |
 |--------|------|-----------|
-| `/unity-assets:index` | 프로젝트 에셋을 2-layer 인덱스로 수집 (filesystem 1차 + unity-mcp 온디맨드 deep-fetch). asset-tagger subagent fan-out으로 의미 태그 부여. 증분 + R1 크래시 복구. | `<unity-project>/.claude/unity-asset-index/{manifest.json, packages.jsonl, assets.jsonl, state.json}` |
+| `/unity-assets:index` | 증분 인덱싱. `state.json::guid_signatures` 비교로 변경 셋만 재태깅. filesystem 1차 + unity-mcp 온디맨드 deep-fetch + asset-tagger subagent fan-out + R1 크래시 복구. | `<unity-project>/.claude/unity-asset-index/{manifest.json, packages.jsonl, assets.jsonl, state.json}` |
+| `/unity-assets:reindex` | 강제 full 재인덱싱. `state.json` 무시, 모든 `.meta` 재태깅. index와 동일 절차 + Step 2 force 분기 (alias 스킬). 새 인덱스 필드 추가·prompt 변경·언어 정책 변경 후 사용. | index와 동일 산출 4종 |
 | `/unity-assets:search "..."` | 자연어 의도 → multi-category 라우팅 → sub-intent별 retrieval (package-first drill-down 기본, 2000+ 또는 rich 시 map-reduce). | `<unity-project>/.claude/unity-asset-index/search-result.json` |
 | `/unity-assets:pick <row-index>` (Wave 2) | 직전 search-result.json의 row-index로 후보 1개 선택 → feedback.jsonl에 한 줄 append. 다음 search의 routing prompt가 "Past picks hint"로 활용 (학습 데이터 누적). | `<unity-project>/.claude/unity-asset-index/feedback.jsonl` (append) |
 | `/unity-assets:build "..."` | search-result.json 기반 confidence-gated Orchestrator. 신선한 search-result.json 없으면 자동 Search 호출 (R3 안내). 씬/프리팹/스크립트 생성까지 자동, 파괴적 작업 금지. | scene 변경 + `orchestrator-audit.jsonl` append |
-| `/unity-assets:doctor` | 5개 의존성 read-only 헬스체크 (Unity Editor, unity-mcp-skill, .claude/ 구조, unity-assets.yml, feedback.jsonl 행 스키마). | stdout 5행 ✓/✗ + 종료 코드 |
+| `/unity-assets:doctor` | 6개 항목 read-only 헬스체크 (Unity Editor, unity-mcp-skill, .claude/ 구조, unity-assets.yml, feedback.jsonl 행 스키마, stale `_tmp/` 잔재 감지). | stdout 6행 ✓/✗ + 종료 코드 |
 
 자세한 호출 흐름·계약은 [CONVENTION.md](./CONVENTION.md), 내부 개발자 가이드는 [AGENTS.md](./AGENTS.md), 플러그인을 실제 Unity 프로젝트에서 시험하며 동시에 개발하는 워크플로는 [docs/dev-loop.md](./docs/dev-loop.md).
 

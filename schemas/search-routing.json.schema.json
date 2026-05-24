@@ -21,7 +21,7 @@
         "properties": {
           "intent": {
             "type": "string",
-            "description": "이 sub-intent의 자연어 표현 (한글)."
+            "description": "이 sub-intent의 자연어 표현 (영어). 사용자 한국어 쿼리는 alias 사전(CRIT-SCH5)으로 영어 normalize 후 emit한다."
           },
           "category_hint": {
             "type": ["string", "null"],

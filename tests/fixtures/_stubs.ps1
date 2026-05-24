@@ -101,7 +101,7 @@ function Invoke-StubAssetTagger {
             type        = $type
             labels      = @($labels)
             llm_tags    = $tags
-            llm_summary = "stub 요약 ($type, $name)."
+            llm_summary = "Stub summary ($type, $name)."
         } | ConvertTo-Json -Compress
         $rows += $row
     }

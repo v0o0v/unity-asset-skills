@@ -16,7 +16,7 @@ confidence_threshold:
   # < confirm                                → reject
 
 # Indexer subagent fan-out 파라미터
-batch_size: 20            # subagent 당 처리 에셋 수
+batch_size: 20            # subagent 당 처리 에셋 수 (V0.1.0+2: 50→20 원복, fallback general-purpose subagent의 200K context cap 보호. probe 결과 50은 4/10 batch "Prompt too long" 실패.)
 parallel_subagents: 10    # 동시 띄울 subagent 수
 # → 한 wave 최대 batch_size * parallel_subagents = 200 에셋
 
